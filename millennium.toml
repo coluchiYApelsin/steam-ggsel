@@ -1,0 +1,19 @@
+[plugin]
+id = "dev.steam.ggselprices"
+name = "Steam GGSEL Prices"
+version = "0.5.0"
+author = "Community"
+description = "GGSEL public catalog offers inside Steam purchase blocks"
+
+[backend]
+entry = "backend/main.lua"
+sources = ["backend/**/*.lua"]
+
+[frontend]
+entry = "frontend/index.tsx"
+
+[webkit]
+entry = "webview/preload.ts"
+
+[compiler]
+output_path = "dist/steam-ggsel.star"
