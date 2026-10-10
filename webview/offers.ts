@@ -1,10 +1,10 @@
 export type Edition = 'standard' | 'deluxe' | 'ultimate' | 'complete' | 'premium';
 export type Offer = {
   id: string; title: string; edition: Edition; kind: 'Steam-ключ' | 'Steam Gift' | 'Аккаунт';
-  price: number; priceFrom: boolean; seller: string; sellerRating?: number;
-  productReviews?: number; sellerId?:string; region: string; conditions: string[]; url: string;
+  price: number; priceFrom: boolean; seller: string; sellerRating?: number; catalogTitle?:string;
+  productReviews?: number; sellerId?:string; configurable?:boolean; sourceTitle?:string; defaultVariant?:string; region: string; conditions: string[]; url: string;
 };
-export const normalize = (s: string) => s.toLowerCase().replace(/[™®©]/g, '')
+export const normalize = (s: string) => s.replace(/[™®©]/g, '').normalize('NFKC').toLowerCase().replace(/\b(?:[a-z]\.){2,}/g,v=>v.replace(/\./g,'')).replace(/[’']/g,'').replace(/&/g,' and ')
   .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
 
 export function editionForHeading(heading: string, title: string): Edition | null {
@@ -89,7 +89,7 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
   if (!/\bsteam\b/i.test(title)) return reject('steam_platform_not_explicit');
   if (/\b(gog|xbox|ps4|ps5|epic|nintendo|rental|rent|offline|dlc|bundle|pack|upgrade)\b|аренд|оффлайн|смен[аы] регион|region chang/i.test(title)) return reject('other_platform_dlc_rental_or_bundle');
   const options: Obj[] = Array.isArray(p.options) ? p.options : [];
-  if (options.some(o => /edition|издани|верси/i.test(String(o.label)))) return reject('seller_edition_selector');
+  if (options.some(o => /edition|version|издани|верси/i.test(String(o.label)))) return reject('configurable_details_required');
   if (options.some(o => o.type === 'radio' && !/region|регион|стран/i.test(String(o.label)))) return reject('unrecognized_order_selector');
   let rest = n.slice(base.length).trim();
   const editions = ['standard', 'deluxe', 'ultimate', 'complete', 'premium'] as const;
@@ -136,6 +136,30 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
 }
 export function toOffer(p:Obj,gameTitle:string):Offer|null{return inspectOffer(p,gameTitle).offer;}
 
+export function productRecord(html:string,id:string):Obj|undefined{
+ let detail:Obj|undefined;function walk(v:unknown,depth=0){if(!v||typeof v!=='object'||depth>45)return;const o=v as Obj;if(String(o.id_goods)===id&&o.category&&o.seller&&Array.isArray(o.options))detail=o;Object.values(o).forEach(x=>walk(x,depth+1));}flightRecords(html).forEach(x=>walk(x));return detail;
+}
+export function variantEdition(label:string,title:string):Edition|'dlc'|'bundle'|null{
+ const n=normalize(label),base=normalize(title);
+ if(n===base||/^(full game|standard edition|standard|base game)$/.test(n))return 'standard';
+ const exact=editionForHeading(label,title);if(exact)return exact;
+ if(/^(deluxe|ultimate|complete|premium)( edition)?$/.test(n))return n.split(' ')[0] as Edition;
+ if(n.startsWith(base+' ')&&/\bdlc\b|дополнени|призрачная свобода|phantom liberty/.test(n))return /full game|базовая игра|игра и|game and|игра плюс/.test(n)?'bundle':'dlc';
+ if(/^full game (and )?dlc$/.test(n))return 'bundle';
+ return null;
+}
+export function configurableOffer(detail:Obj,candidate:Obj,title:string):Offer|null{
+ if(String(detail.id_goods)!==String(candidate.id_goods)||normalize(String(detail.baseCategory_name))!==normalize(title)||detail.category?.platform!=='Steam'||detail.category?.content_type_id!==48||!/steam/i.test(detail.name)||!/gift|auto/i.test(detail.name)||/gog|xbox|ps[45]|rent|offline|аренд/i.test(detail.name))return null;
+  const selectors=detail.options.filter((o:Obj)=>/edition|version|издани|верси/i.test(String(o.label)));
+ if(selectors.length!==1)return null;const option=selectors[0];if(!['radio','select'].includes(option.type)||!Array.isArray(option.variants))return null;
+ if(option.variants.some((v:Obj)=>!variantEdition(String(v.text),title)))return null;
+ const selected=option.variants.find((v:Obj)=>v.default);if(!selected||selected.disabled||selected.num_in_stock===0)return null;
+ const edition=variantEdition(selected.text,title);if(!edition||edition==='dlc'||edition==='bundle')return null;
+ const raw={...detail,name:`${title}${edition==='standard'?'':` ${edition} Edition`} Steam Gift`,url:candidate.url,forbidden_type:detail.category.forbidden_type,content_type_id:48,options:detail.options.filter((o:Obj)=>o!==option),seller:{...detail.seller,rating:detail.seller.statistics?.rating}};
+ const offer=toOffer(raw,title);if(!offer)return null;
+ return {...offer,configurable:true,sourceTitle:detail.name,defaultVariant:String(selected.value),title:`${selected.text} · выбор варианта GGSEL`,priceFrom:false};
+}
+
 // Alternative catalog cards omit seller statistics and option selectors. Never render
 // those cards until the actual product page independently confirms its identity.
 export function productOffer(html:string, candidate:Obj, gameTitle:string):Offer|null {
@@ -145,6 +169,7 @@ export function productOffer(html:string, candidate:Obj, gameTitle:string):Offer
     Object.values(o).forEach(x=>walk(x,depth+1));}
   flightRecords(html).forEach(x=>walk(x));
   if(!detail || normalize(String(detail.baseCategory_name))!==normalize(gameTitle) || detail.category.platform!=='Steam') return null;
+  const configurable=configurableOffer(detail,candidate,gameTitle);if(configurable)return configurable;
   const edition=editionForHeading(`${gameTitle} ${detail.category.edition}`,gameTitle);
   if(!edition)return null;
   const text=String(detail.info??'').replace(/<br\s*\/?\s*>|<\/p>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();

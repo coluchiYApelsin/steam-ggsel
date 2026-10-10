@@ -2,6 +2,7 @@ local json = require("json")
 local http = require("http")
 local cache = {}
 local last_request = 0
+local catalog_window,catalog_count=0,0
 local function content_type(response)
     for key,value in pairs(response.headers or {}) do
         if type(key)=="string" and key:lower()=="content-type" and type(value)=="string" then return value:lower() end
@@ -12,16 +13,13 @@ end
 local catalogs = {
     ["1091500"] = "cyberpunk-2077",
 }
----@ffi
----@param appid string
----@param title string
----@return string
-function getGgselOffers(appid, title)
+local function catalog_request(appid, title, catalog, refresh)
     appid = tostring(appid)
     if not appid:match("^%d+$") or #appid > 10 or type(title) ~= "string" or #title < 2 or #title > 150 then
         return json.encode({ status = "invalid_request" })
     end
-    local slug = catalogs[appid]
+    local slug = catalog or catalogs[appid]
+    if catalog and (type(catalog)~='string' or #catalog>150 or not catalog:match('^[a-z0-9%-]+$')) then return json.encode({status='invalid_request'}) end
     if not slug then
         -- A normal public page request, not the disallowed /search/ endpoint.
         -- The webview MUST verify the returned catalog's exact title before showing prices.
@@ -29,15 +27,17 @@ function getGgselOffers(appid, title)
         if #slug < 2 or #slug > 100 then return json.encode({ status = "unsupported_game" }) end
     end
     local expected = appid == "1091500" and "Cyberpunk 2077" or title
-    local cache_key = appid .. ":" .. expected
+    local cache_key = appid .. ":" .. expected .. ':' .. slug
     local now = os.time()
     local hit = cache[cache_key]
-    if hit and hit.expires > now then return hit.value end
-    if now - last_request < 3 then return json.encode({ status = "rate_limited" }) end
+    if not refresh and hit and hit.expires > now then return hit.value end
+    if now-catalog_window>=60 then catalog_window=now;catalog_count=0 end
+    if catalog_count>=20 or (not catalog and not refresh and now-last_request<3) then return json.encode({status='rate_limited'}) end
+    catalog_count=catalog_count+1
     last_request = now
     local ok, response = pcall(http.get, "https://ggsel.net/en/catalog/" .. slug, {
         timeout = 15, follow_redirects = false, verify_ssl = true,
-        user_agent = "Steam-GGSEL/0.7.0 (public catalog comparison)",
+        user_agent = "Steam-GGSEL/0.8.0 (public catalog comparison)",
         headers = { ["Accept"] = "text/html" },
     })
     local result
@@ -69,22 +69,18 @@ end
 
 local product_cache = {}
 local product_window, product_count = 0, 0
----@ffi
----@param id string
----@param slug string
----@return string
-function getGgselProduct(id, slug)
+local function product_request(id, slug, refresh)
     if type(id) ~= "string" or not id:match("^%d+$") or #id > 12 or type(slug) ~= "string" or #slug > 250 or not slug:match("^[a-z0-9%-]+$") or slug:sub(-#id-1) ~= "-" .. id then
         return json.encode({status="invalid_request"})
     end
     local now=os.time()
     local hit=product_cache[id]
-    if hit and hit.slug == slug and hit.expires>now then return hit.value end
+    if not refresh and hit and hit.slug == slug and hit.expires>now then return hit.value end
     if now-product_window>=60 then product_window=now;product_count=0 end
-    if product_count>=12 then return json.encode({status="rate_limited"}) end
+    if product_count>=30 then return json.encode({status="rate_limited"}) end
     product_count=product_count+1
     local ok,r=pcall(http.get,"https://ggsel.net/en/catalog/product/"..slug,{
-        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.7.0 (public product verification)",headers={Accept="text/html"}})
+        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.8.0 (public product verification)",headers={Accept="text/html"}})
     local result
     if not ok or not r then result={status="network_error"}
     elseif r.status~=200 then result={status="http_error",http_status=r.status}
@@ -93,8 +89,41 @@ function getGgselProduct(id, slug)
     else result={status="ok",html=r.body,fetched_at=now} end
     local count=0
     for key,value in pairs(product_cache) do if value.expires<=now then product_cache[key]=nil else count=count+1 end end
-    if count>=12 then product_cache={} end
+    if count>=16 then product_cache={} end
     local value=json.encode(result)
     product_cache[id]={slug=slug,value=value,expires=now+(result.status=="ok" and 600 or 30)}
     return value
+end
+
+---@ffi
+---@param appid string
+---@param title string
+---@param catalog string
+---@param refresh boolean
+---@return string
+function getGgselCatalog(appid,title,catalog,refresh)
+ if catalog=='' then catalog=nil end
+ return catalog_request(appid,title,catalog,refresh)
+end
+---@ffi
+---@param id string
+---@param slug string
+---@return string
+function getGgselProductFresh(id,slug)
+ return product_request(id,slug,true)
+end
+
+---@ffi
+---@param appid string
+---@param title string
+---@return string
+function getGgselOffers(appid,title)
+ return catalog_request(appid,title,nil,false)
+end
+---@ffi
+---@param id string
+---@param slug string
+---@return string
+function getGgselProduct(id,slug)
+ return product_request(id,slug,false)
 end
