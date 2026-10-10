@@ -37,7 +37,7 @@ function getGgselOffers(appid, title)
     last_request = now
     local ok, response = pcall(http.get, "https://ggsel.net/en/catalog/" .. slug, {
         timeout = 15, follow_redirects = false, verify_ssl = true,
-        user_agent = "Steam-GGSEL/0.6.0 (public catalog comparison)",
+        user_agent = "Steam-GGSEL/0.7.0 (public catalog comparison)",
         headers = { ["Accept"] = "text/html" },
     })
     local result
@@ -84,7 +84,7 @@ function getGgselProduct(id, slug)
     if product_count>=12 then return json.encode({status="rate_limited"}) end
     product_count=product_count+1
     local ok,r=pcall(http.get,"https://ggsel.net/en/catalog/product/"..slug,{
-        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.6.0 (public product verification)",headers={Accept="text/html"}})
+        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.7.0 (public product verification)",headers={Accept="text/html"}})
     local result
     if not ok or not r then result={status="network_error"}
     elseif r.status~=200 then result={status="http_error",http_status=r.status}
@@ -99,20 +99,3 @@ function getGgselProduct(id, slug)
     return value
 end
 
--- Only the originating Steam app and scroll offset; never merchant/payment data.
-local merchant_context = nil
----@ffi
----@param appid string
----@param scroll number
----@return boolean
-function setMerchantContext(appid,scroll)
-    if type(appid)~="string" or not appid:match("^%d+$") or #appid>10 or type(scroll)~="number" or scroll<0 or scroll>100000 then return false end
-    merchant_context={appid=appid,scroll=scroll,expires=os.time()+7200}
-    return true
-end
----@ffi
----@return string
-function getMerchantContext()
-    if merchant_context and merchant_context.expires>os.time() then return json.encode(merchant_context) end
-    return json.encode({})
-end

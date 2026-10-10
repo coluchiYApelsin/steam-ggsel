@@ -2,7 +2,7 @@ export type Edition = 'standard' | 'deluxe' | 'ultimate' | 'complete' | 'premium
 export type Offer = {
   id: string; title: string; edition: Edition; kind: 'Steam-ключ' | 'Steam Gift' | 'Аккаунт';
   price: number; priceFrom: boolean; seller: string; sellerRating?: number;
-  productReviews?: number; region: string; conditions: string[]; url: string;
+  productReviews?: number; sellerId?:string; region: string; conditions: string[]; url: string;
 };
 export const normalize = (s: string) => s.toLowerCase().replace(/[™®©]/g, '')
   .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
@@ -129,6 +129,7 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
     kind: account ? 'Аккаунт' : key ? 'Steam-ключ' : 'Steam Gift', price,
     priceFrom: options.some(o => Array.isArray(o.variants) && o.variants.length > 1),
     seller: p.seller.name_seller,
+    sellerId:Number.isSafeInteger(p.seller.id_seller)?String(p.seller.id_seller):undefined,
     sellerRating: typeof sellerRating === 'number' && sellerRating >= 0 && sellerRating <= 5 ? sellerRating : undefined,
     productReviews: Number.isSafeInteger(p.cnt_responses) && p.cnt_responses >= 0 ? p.cnt_responses : undefined,
     region, conditions, url: `https://ggsel.net/en/catalog/product/${p.url}` }};

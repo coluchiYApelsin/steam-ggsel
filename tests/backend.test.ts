@@ -59,11 +59,6 @@ test('native product provider validates destinations, caches requests, limits tr
  now=161;mime='application/json'
  assert(getGgselProduct('13','game-13')=='unexpected_content_type')
  assert(getGgselOffers('2677660','Indiana Jones and the Great Circle')=='unexpected_content_type')
- assert(setMerchantContext('../evil',0)==false)
- assert(setMerchantContext('1091500',-1)==false)
- assert(setMerchantContext('1091500',1000)==true)
- getMerchantContext();assert(result.appid=='1091500' and result.scroll==1000)
- now=8000;getMerchantContext();assert(result.appid==nil)
  `;
  const code=lauxlib.luaL_dostring(L,to_luastring(script));const error=code===lua.LUA_OK?'':require('fengari').to_jsstring(lua.lua_tostring(L,-1));lua.lua_close(L);expect(error).toBe('');
 });

@@ -1,5 +1,5 @@
 import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, productOffer, type Offer } from './offers';
-import {openProduct,restoreSteamState,startMerchantShell} from './merchant';
+import {openProductPage} from './product-page';
 const WRAP = 'ggsel-offers';
 const STYLE = 'ggsel-offers-style';
 const appId = () => location.hostname === 'store.steampowered.com' ? location.pathname.match(/^\/app\/(\d+)(?:\/|$)/)?.[1] ?? null : null;
@@ -20,7 +20,7 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
 .${WRAP} .ggsel-info{min-width:0;flex:1}.ggsel-title{overflow-wrap:anywhere}
 .${WRAP} .ggsel-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .${WRAP} .ggsel-price{color:#beee11;white-space:nowrap;font-size:14px}
-.${WRAP} .ggsel-buy{display:inline-block;color:#d2efa9!important;background:linear-gradient(to right,#75b022,#588a1b);padding:7px 10px;text-decoration:none}
+.${WRAP} button.ggsel-buy{display:inline-block;color:#d2efa9!important;background:linear-gradient(to right,#75b022,#588a1b);padding:7px 10px;text-decoration:none;border:0;margin:0}
 .${WRAP} .ggsel-buy:hover{background:#83b83b;color:#fff!important}
 .${WRAP} button{color:#c7d5e0;background:#273c4d;border:1px solid #426078;padding:6px 10px;cursor:pointer;margin-top:8px}
 .${WRAP} a:focus-visible,.${WRAP} button:focus-visible{outline:2px solid #66c0f4;outline-offset:2px}
@@ -38,10 +38,10 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     if (o.conditions.length) { const details = create('details'); details.append(create('summary','','Регионы и условия продавца')); o.conditions.forEach(c=>details.append(create('div','ggsel-meta',c))); info.append(details); }
     const actions = create('div', 'ggsel-actions');
     actions.append(create('span', 'ggsel-price', `${o.priceFrom ? 'от ' : ''}${o.price.toLocaleString('ru-RU')} ₽`));
-    const a = create('a', 'ggsel-buy', 'На GGSEL') as HTMLAnchorElement;
-    a.href = o.url; a.target = '_self'; a.rel = 'noopener noreferrer';
-    a.title='Открыть настоящий товар стороннего продавца GGSEL в текущем окне';
-    a.onclick=(event)=>{event.preventDefault();const id=appId();if(id)void openProduct(o.url,id).catch(()=>{a.title='Не удалось открыть товар';});};
+    const a = create('button', 'ggsel-buy', 'На GGSEL') as HTMLButtonElement;
+    a.type='button';
+    a.title='Открыть страницу товара GGSEL внутри магазина Steam';
+    a.onclick=(event)=>{event.preventDefault();event.stopPropagation();const id=appId();if(id)void openProductPage(o,id,title()).catch(()=>{a.title='Не удалось открыть страницу товара внутри Steam';});};
     actions.append(a); r.append(info, actions); return r;
   }
   function paint() {
@@ -70,7 +70,6 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
         if (loaded.status !== 'loading' && loaded.status !== 'unsupported_game') { const retry = create('button','','Повторить') as HTMLButtonElement; retry.type='button'; retry.onclick=()=>{current='';refresh();}; root.append(retry); }
       }
     }
-    if(loaded.status==='ok'&&document.querySelector('.ggsel-row'))restoreSteamState(appId()!);
   }
   async function load(id: string, request: number) {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -123,7 +122,6 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
   return ()=>{stopped=true;++generation;observer.disconnect();clearInterval(interval);window.removeEventListener('popstate',schedule);document.querySelectorAll(`.${WRAP}`).forEach(el=>el.remove());};
 }
 export default function main() {
-  if(location.hostname==='ggsel.net'){void startMerchantShell();return;}
   if(location.hostname!=='store.steampowered.com')return;
   const w=window as Window & {__steamGgselCleanup?:()=>void};
   w.__steamGgselCleanup?.(); w.__steamGgselCleanup=startWidget();
