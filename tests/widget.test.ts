@@ -10,6 +10,16 @@ test('sorted real offers per edition preserve Steam controls without duplicates'
 test('old request cannot paint a different page; leaving app removes widgets',async()=>{const w=setup();const pending:Array<(s:string)=>void>=[];const stop=startWidget(()=>new Promise(r=>{pending.push(r);}));try{await wait();w.history.pushState({},'','/app/999/');w.document.querySelector('h1')!.textContent='Buy Other Game';await wait();pending[0]!(payload());await wait();expect(w.document.querySelectorAll('.ggsel-row')).toHaveLength(0);w.history.pushState({},'','/');w.dispatchEvent(new w.Event('popstate'));await wait();expect(w.document.querySelectorAll('.ggsel-offers')).toHaveLength(0);}finally{stop();pending.forEach(r=>r(JSON.stringify({status:'unsupported_game'})));w.happyDOM.abort();}});
 test('network errors have an explicit retry',async()=>{const w=setup();const stop=startWidget(async()=>JSON.stringify({status:'network_error'}));try{await wait();expect(w.document.querySelector('.ggsel-offers')?.textContent).toContain('GGSEL недоступен');expect(w.document.querySelector('.ggsel-offers button')?.textContent).toBe('Повторить');}finally{stop();w.happyDOM.abort();}});
 test('Millennium FFI may already decode the Lua JSON response into an object',async()=>{const w=setup();const stop=startWidget(async()=>JSON.parse(payload()));try{await wait();expect(w.document.querySelectorAll('.ggsel-row')).toHaveLength(5);}finally{stop();w.happyDOM.abort();}});
+
+test('current Russian Steam h2 headers and real package/bundle forms render different editions',async()=>{
+ const w=setup();
+ const blocks=w.document.querySelectorAll('.game_area_purchase_game');
+ blocks[0]!.innerHTML='<h2>Купить Cyberpunk 2077</h2><input name="subid" value="367653"><input name="bundleid" value="0"><button id="steam-buy">Steam original</button>';
+ blocks[1]!.innerHTML='<h2>Купить Cyberpunk 2077: Полное издание</h2><input name="bundleid" value="32470">';
+ const original=w.document.getElementById('steam-buy');const stop=startWidget(async()=>JSON.parse(payload()));
+ try{await wait();expect(blocks[0]!.querySelectorAll('.ggsel-row')).toHaveLength(4);expect(blocks[1]!.querySelectorAll('.ggsel-row')).toHaveLength(1);expect(blocks[1]!.querySelector('.ggsel-title')?.textContent).toContain('Ultimate');expect(w.document.getElementById('steam-buy')).toBe(original);}
+ finally{stop();w.happyDOM.abort();}
+});
 test('additional offers expand after five; unknown editions remain unconfirmed',async()=>{
  const w=setup();
  // Explicitly synthetic DOM-test records, never used by the runtime provider.

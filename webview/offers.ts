@@ -16,6 +16,31 @@ export function editionForHeading(heading: string, title: string): Edition | nul
   }
   return null;
 }
+
+export type PurchaseMatch = {edition:Edition|null;reason:string;heading:string;bundleIds:string[];packageIds:string[]};
+export function matchPurchaseBlock(block: Element, appid: string, gameTitle: string): PurchaseMatch {
+  const headingNode = block.querySelector('h1, h2, .game_area_purchase_game_name')?.cloneNode(true) as Element | undefined;
+  // Steam places its bundle badge/help text inside h1; it is not part of the product name.
+  headingNode?.querySelectorAll('.bundle_label').forEach(e=>e.remove());
+  const heading = headingNode?.textContent?.trim() ?? '';
+  const ids = (name:string,attribute:string) => [...new Set([block,...block.querySelectorAll(`[${attribute}], input[name="${name}"]`)]
+    .filter(e=>e===block || e.closest('.game_area_purchase_game')===block)
+    .flatMap(e=>[e.getAttribute(attribute),e.matches(`input[name="${name}"]`) ? e.getAttribute('value') : null])
+    .filter((s):s is string=>!!s && /^\d+$/.test(s) && Number(s)>0))];
+  // Steam forms can contain bundleid=0 alongside a real subid. Zero is not a bundle.
+  const bundleIds=ids('bundleid','data-ds-bundleid'),packageIds=ids('subid','data-ds-packageid');
+  const result=(edition:Edition|null,reason:string):PurchaseMatch=>({edition,reason,heading,bundleIds,packageIds});
+  if(bundleIds.length){
+    // Reviewed Steam bundle 32470 contains Cyberpunk 2077 + Phantom Liberty.
+    // Never infer that an arbitrary bundle is an Ultimate/Complete edition from its label.
+    const h=normalize(heading).replace(/^(buy|купить|purchase) /,'');
+    const allowed=['cyberpunk 2077 ultimate edition','cyberpunk 2077 ultimate','cyberpunk 2077 полное издание'];
+    if(appid==='1091500' && normalize(gameTitle)==='cyberpunk 2077' && bundleIds.length===1 && bundleIds[0]==='32470' && allowed.includes(h)) return result('ultimate','reviewed_bundle_32470');
+    return result(null,'unverified_bundle');
+  }
+  const edition=editionForHeading(heading,gameTitle);
+  return result(edition,edition ? 'exact_heading' : 'unrecognized_heading');
+}
 type Obj = Record<string, any>;
 // JSON only: never evaluate scripts received from GGSEL or insert their HTML into Steam.
 export function catalogProducts(html: string, expectedTitle: string): Obj[] {
@@ -48,32 +73,34 @@ export function catalogProducts(html: string, expectedTitle: string): Obj[] {
   return [...products.values()];
 }
 
-export function toOffer(p: Obj, gameTitle: string): Offer | null {
+export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reason:string} {
+  const reject=(reason:string)=>({offer:null,reason});
   const title = typeof p.name === 'string' ? p.name : '';
   const n = normalize(title), base = normalize(gameTitle);
-  if (!n.startsWith(`${base} `) || !/\bsteam\b/i.test(title)) return null;
-  if (/\b(gog|xbox|ps4|ps5|epic|nintendo|rental|rent|offline|dlc|bundle|pack|upgrade)\b|аренд|оффлайн|смен[аы] регион|region chang/i.test(title)) return null;
+  if (!n.startsWith(`${base} `)) return reject('different_game_title');
+  if (!/\bsteam\b/i.test(title)) return reject('steam_platform_not_explicit');
+  if (/\b(gog|xbox|ps4|ps5|epic|nintendo|rental|rent|offline|dlc|bundle|pack|upgrade)\b|аренд|оффлайн|смен[аы] регион|region chang/i.test(title)) return reject('other_platform_dlc_rental_or_bundle');
   const options: Obj[] = Array.isArray(p.options) ? p.options : [];
-  if (options.some(o => /edition|издани|верси/i.test(String(o.label)))) return null;
-  if (options.some(o => o.type === 'radio' && !/region|регион|стран/i.test(String(o.label)))) return null;
+  if (options.some(o => /edition|издани|верси/i.test(String(o.label)))) return reject('seller_edition_selector');
+  if (options.some(o => o.type === 'radio' && !/region|регион|стран/i.test(String(o.label)))) return reject('unrecognized_order_selector');
   let rest = n.slice(base.length).trim();
   const editions = ['standard', 'deluxe', 'ultimate', 'complete'] as const;
   const found = editions.filter(e => new RegExp(`\\b${e}\\b`).test(rest));
-  if (found.length > 1) return null;
+  if (found.length > 1) return reject('ambiguous_edition');
   const edition: Edition = found[0] ?? 'standard';
   // Unknown extra tokens can indicate another game, DLC or edition: reject them.
   rest = rest.replace(/\b(standard|deluxe|ultimate|complete|edition|steam|key|gift|account|pc|auto|delivery|world|worldwide|global|except|ru|rb|by|ua|kz|cis|sng|tr|ar)\b/g, '').trim();
-  if (rest || /edition choice|edition selection/i.test(title)) return null;
+  if (rest || /edition choice|edition selection/i.test(title)) return reject('unrecognized_title_tokens');
   const account = /\baccount\b|аккаунт/i.test(title);
   const key = /\bkey\b|ключ/i.test(title);
   const gift = /\b(gift|auto)\b/i.test(title);
-  if (account && key) return null;
-  if (!account && !key && /\bauto\b/i.test(title) && !/\bgift\b/i.test(title) && p.content_type_id !== 48) return null;
-  if (!account && Number(key) + Number(gift) !== 1) return null;
+  if (account && key) return reject('ambiguous_activation');
+  if (!account && !key && /\bauto\b/i.test(title) && !/\bgift\b/i.test(title) && p.content_type_id !== 48) return reject('unconfirmed_auto_activation');
+  if (!account && Number(key) + Number(gift) !== 1) return reject('ambiguous_activation');
   const price = Number(p.price_wmr);
-  if (!Number.isFinite(price) || price <= 0 || p.forbidden_type !== 0 || p.is_preorder) return null;
-  if (typeof p.url !== 'string' || !/^[a-z0-9-]+-\d+$/.test(p.url) || !p.url.endsWith(`-${p.id_goods}`)) return null;
-  if (typeof p.seller?.name_seller !== 'string' || !p.seller.name_seller) return null;
+  if (!Number.isFinite(price) || price <= 0 || p.forbidden_type !== 0 || p.is_preorder) return reject('invalid_price_or_unavailable');
+  if (typeof p.url !== 'string' || !/^[a-z0-9-]+-\d+$/.test(p.url) || !p.url.endsWith(`-${p.id_goods}`)) return reject('invalid_product_url');
+  if (typeof p.seller?.name_seller !== 'string' || !p.seller.name_seller) return reject('missing_seller');
   const regionOption = options.find(o => /region|регион|стран/i.test(String(o.label)));
   let region = 'Регион не указан — проверьте на GGSEL';
   if (regionOption) {
@@ -86,11 +113,12 @@ export function toOffer(p: Obj, gameTitle: string): Offer | null {
   const sellerRating = p.seller.rating;
   const conditions = options.map(o => [o.label, ...(Array.isArray(o.variants) ? o.variants.map((v: Obj) => v.text) : []), o.comment]
     .filter(x => typeof x === 'string' && x.trim()).join(' · ')).filter(Boolean);
-  return { id: String(p.id_goods), title, edition,
+  return {reason:'accepted',offer:{ id: String(p.id_goods), title, edition,
     kind: account ? 'Аккаунт' : key ? 'Steam-ключ' : 'Steam Gift', price,
     priceFrom: options.some(o => Array.isArray(o.variants) && o.variants.length > 1),
     seller: p.seller.name_seller,
     sellerRating: typeof sellerRating === 'number' && sellerRating >= 0 && sellerRating <= 5 ? sellerRating : undefined,
     productReviews: Number.isSafeInteger(p.cnt_responses) && p.cnt_responses >= 0 ? p.cnt_responses : undefined,
-    region, conditions, url: `https://ggsel.net/en/catalog/product/${p.url}` };
+    region, conditions, url: `https://ggsel.net/en/catalog/product/${p.url}` }};
 }
+export function toOffer(p:Obj,gameTitle:string):Offer|null{return inspectOffer(p,gameTitle).offer;}

@@ -1,7 +1,7 @@
 [plugin]
 id = "dev.steam.ggselprices"
 name = "Steam GGSEL Prices"
-version = "0.5.0"
+version = "0.5.1"
 author = "Community"
 description = "GGSEL public catalog offers inside Steam purchase blocks"
 

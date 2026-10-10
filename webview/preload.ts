@@ -1,4 +1,4 @@
-import { catalogProducts, editionForHeading, normalize, toOffer, type Offer } from './offers';
+import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, type Offer } from './offers';
 const WRAP = 'ggsel-offers';
 const STYLE = 'ggsel-offers-style';
 const appId = () => location.hostname === 'store.steampowered.com' ? location.pathname.match(/^\/app\/(\d+)(?:\/|$)/)?.[1] ?? null : null;
@@ -45,13 +45,13 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     if (!appId()) return;
     style();
     for (const block of document.querySelectorAll('.game_area_purchase_game')) {
-      const heading = block.querySelector('h1, .game_area_purchase_game_name')?.textContent ?? '';
-      // A Steam bundle control always requires a separately verified bundle mapping.
-      const edition = block.querySelector('[data-ds-bundleid], input[name="bundleid"]') ? null : editionForHeading(heading, title());
+      const match = matchPurchaseBlock(block,appId()!,title());
+      const {heading,edition} = match;
       const offers = loaded.gameTitle && normalize(loaded.gameTitle) === normalize(title()) ? loaded.offers.filter(o => o.edition === edition).sort((a,b) => a.price-b.price) : [];
-      const signature = JSON.stringify([current, heading, loaded.status, loaded.fetchedAt, offers]);
+      const signature = JSON.stringify([current, match, loaded.status, loaded.fetchedAt, offers]);
       let root = block.querySelector(`.${WRAP}`) as HTMLElement | null;
       if (root?.dataset.signature === signature) continue;
+      console.info('[Steam × GGSEL] match', JSON.stringify({appid:appId(),title:title(),...match,status:loaded.status,accepted:loaded.offers.map(o=>({id:o.id,edition:o.edition})),matched:offers.length}));
       if (!root) { root = create('section', WRAP); root.setAttribute('aria-label', 'Предложения сторонней площадки GGSEL'); block.append(root); }
       root.dataset.signature = signature; root.replaceChildren();
       const head = create('div','ggsel-head'); head.append(create('strong','','Предложения GGSEL'), create('small','','Сторонняя площадка · не Valve')); root.append(head);
@@ -80,7 +80,11 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
       else {
         if (typeof data.html !== 'string' || typeof data.catalog_title !== 'string' || typeof data.fetched_at !== 'number') throw new Error('invalid_response');
         if (normalize(data.catalog_title) !== normalize(requestTitle)) throw new Error('invalid_response');
-        loaded = { status:'ok', gameTitle:requestTitle, fetchedAt:data.fetched_at, offers: catalogProducts(data.html,data.catalog_title).map(p=>toOffer(p,data.catalog_title)).filter((o): o is Offer=>o!==null) };
+        const products=catalogProducts(data.html,data.catalog_title);
+        const inspected=products.map(p=>inspectOffer(p,data.catalog_title));
+        const reasons:Record<string,number>={};inspected.forEach(x=>{reasons[x.reason]=(reasons[x.reason]??0)+1;});
+        console.info('[Steam × GGSEL] catalog',JSON.stringify({appid:id,title:requestTitle,products:products.length,reasons}));
+        loaded = { status:'ok', gameTitle:requestTitle, fetchedAt:data.fetched_at, offers: inspected.map(x=>x.offer).filter((o): o is Offer=>o!==null) };
       }
     } catch (e) {
       if (stopped || request !== generation || appId() !== id) return;

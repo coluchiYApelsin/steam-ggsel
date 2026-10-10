@@ -29,3 +29,9 @@ The local Millennium MEP socket returned the plugin's metadata, `enabled: true`,
 A later actual Steam WebView call for ARC Raiders revealed that Millennium's FFI had already decoded the Lua JSON return value. An unconditional JSON.parse failed with `[object Object] is not valid JSON`. The client now accepts either an object or a JSON string, with a regression test. The provider did return HTTP data through actual WebView → Lua → GGSEL → WebView IPC; visual rendering after this correction still requires a fresh game page.
 
 Reduced public listing fixtures exist only under tests/fixtures. They are never packaged as live prices. `bun scripts/check-live.ts` independently requests fresh data and rejects a response with fewer than three usable offers. No purchases were performed.
+
+## Cyberpunk purchase matching, 0.5.1
+
+Live Russian Steam diagnostics identified an empty purchase heading: current markup uses `h2`, whereas the old selector looked for `h1`. The game title and AppID were correct, and real GGSEL catalog data reached the widget. The base purchase carries package 367653; the full-edition block carries bundle 32470. Recognition now supports current headings, treats zero bundle IDs as absent, and accepts only the reviewed bundle with the exact expected game and edition title.
+
+Steam's [Ultimate Edition bundle 32470](https://store.steampowered.com/bundle/32470/?l=english) contains Cyberpunk 2077 and Phantom Liberty. This specific bundle maps to GGSEL Ultimate, including the Russian Steam title «Полное издание»; arbitrary bundles are still rejected. Live visual verification now passed with four Standard and one Ultimate offer. See VALIDATION-0.5.1.md for prices, rejection counts and artifact hash.
