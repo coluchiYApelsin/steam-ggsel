@@ -37,20 +37,20 @@ local function catalog_request(appid, title, catalog, refresh)
     last_request = now
     local ok, response = pcall(http.get, "https://ggsel.net/en/catalog/" .. slug, {
         timeout = 15, follow_redirects = false, verify_ssl = true,
-        user_agent = "Steam-GGSEL/0.8.0 (public catalog comparison)",
+        user_agent = "Steam-GGSEL/0.8.1 (public catalog comparison)",
         headers = { ["Accept"] = "text/html" },
     })
     local result
     if not ok or not response then
         result = { status = "network_error" }
     elseif response.status == 404 then
-        result = { status = "unsupported_game" }
+        result = { status = "unsupported_game", http_status = response.status }
     elseif response.status ~= 200 then
         result = { status = "http_error", http_status = response.status }
     elseif type(response.body) ~= "string" or #response.body > 3000000 then
         result = { status = "invalid_response" }
-    elseif content_type(response) and not content_type(response):find("text/html", 1, true) then
-        result = { status = "unexpected_content_type" }
+    elseif not content_type(response) or not content_type(response):find("text/html", 1, true) then
+        result = { status = "unexpected_content_type", http_status = response.status }
     else
         result = { status = "ok", html = response.body, fetched_at = now,
             catalog_title = expected, source = "https://ggsel.net/en/catalog/" .. slug,
@@ -80,13 +80,13 @@ local function product_request(id, slug, refresh)
     if product_count>=30 then return json.encode({status="rate_limited"}) end
     product_count=product_count+1
     local ok,r=pcall(http.get,"https://ggsel.net/en/catalog/product/"..slug,{
-        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.8.0 (public product verification)",headers={Accept="text/html"}})
+        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.8.1 (public product verification)",headers={Accept="text/html"}})
     local result
     if not ok or not r then result={status="network_error"}
     elseif r.status~=200 then result={status="http_error",http_status=r.status}
     elseif type(r.body)~="string" or #r.body>3000000 then result={status="invalid_response"}
-    elseif content_type(r) and not content_type(r):find("text/html",1,true) then result={status="unexpected_content_type"}
-    else result={status="ok",html=r.body,fetched_at=now} end
+    elseif not content_type(r) or not content_type(r):find("text/html",1,true) then result={status="unexpected_content_type",http_status=r.status}
+    else result={status="ok",html=r.body,fetched_at=os.time(),http_status=r.status} end
     local count=0
     for key,value in pairs(product_cache) do if value.expires<=now then product_cache[key]=nil else count=count+1 end end
     if count>=16 then product_cache={} end

@@ -30,7 +30,7 @@ test('Lua provider bounds requests, caches results and never disables TLS or fol
    assert(url:match('^https://ggsel.net/en/catalog/[a-z0-9%-]+$'))
    assert(opts.verify_ssl==true and opts.follow_redirects==false and opts.timeout<=15)
    if network then error('network unavailable') end
-   return {status=status,body=body}
+   return {status=status,body=body,headers={['Content-Type']='text/html'}}
  end} end
  ${source}
  assert(getGgselOffers('../evil','Game')=='invalid_request' and calls==0)
@@ -70,12 +70,15 @@ test('native product provider validates destinations, caches requests, limits tr
  assert(getGgselProduct('1','https://evil.test/1')=='invalid_request' and calls==0)
  assert(getGgselProduct('1','game-2')=='invalid_request' and calls==0)
  assert(getGgselProduct('1','game-1')=='ok' and calls==1)
+ assert(result.http_status==200)
  assert(getGgselProduct('1','game-1')=='ok' and calls==1)
  for n=2,30 do assert(getGgselProduct(tostring(n),'game-'..n)=='ok') end
  assert(getGgselProduct('31','game-31')=='rate_limited' and calls==30)
  now=161;mime='application/json'
  assert(getGgselProduct('13','game-13')=='unexpected_content_type')
  assert(getGgselOffers('2677660','Indiana Jones and the Great Circle')=='unexpected_content_type')
+ now=222;mime=nil
+ assert(getGgselProduct('14','game-14')=='unexpected_content_type' and result.http_status==200)
  `;
  const code=lauxlib.luaL_dostring(L,to_luastring(script));const error=code===lua.LUA_OK?'':require('fengari').to_jsstring(lua.lua_tostring(L,-1));lua.lua_close(L);expect(error).toBe('');
 });

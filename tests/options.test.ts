@@ -38,3 +38,21 @@ test('normalization handles punctuation and apostrophes without merging sequels'
  expect(normalize('Indiana Jones & the Great Circle')).toBe(normalize('Indiana Jones and the Great Circle'));
  expect(normalize('Cyberpunk 2077')).not.toBe(normalize('Cyberpunk 2078'));
 });
+
+test('malformed option schemas and duplicate identifiers fail closed',()=>{
+ for(const raw of [[null],[false],[[]],[{id:1,name:'option_radio_1',type:'radio',label:'Region',variants:[null]}],[{id:1,name:'option_radio_1',type:'radio',label:'Region',variants:[{value:2,text:'RU'},{value:2,text:'Other'}]}]])expect(()=>productOptions(raw)).toThrow('unsupported_options');
+ const options=productOptions(raw.options);
+ expect(validateSelection(options,{'448562':['1177043'],'448549':['1177022'],unknown:['1']})).not.toBeNull();
+ expect(validateSelection(options,{'448562':['1177043','1177043']})).not.toBeNull();
+ expect(()=>selectionProductUrl('https://evil.test/product-1',options,defaultSelection(options))).toThrow('invalid_product_context');
+ expect(()=>selectionProductUrl('https://ggsel.net/en/catalog/product/real-1',options,{'448562':['999']})).toThrow();
+});
+
+test('payment and authentication secrets are never offered as plugin inputs',()=>{
+ for(const label of ['Steam Guard code','2FA','Two-factor code','CVV','CVC','Card number','Номер банковской карты','Одноразовый код','Код подтверждения','Пароль Steam'])expect(()=>productOptions([{id:1,name:'option_text_1',type:'text',label}])).toThrow('sensitive_option');
+ expect(()=>productOptions([{id:1,name:'option_text_1',type:'text',label:'Data',comment:'Enter Steam Guard code'}])).toThrow('sensitive_option');
+});
+
+test('quote timestamps reject invalid or future confirmations',()=>{
+ for(const fetched_at of [NaN,Infinity,0,-1,1.5,Math.floor(Date.now()/1000)+60])expect(()=>decodeQuote({status:'ok',fetched_at,data:{success:true,data:{amount:2990,count:1}}})).toThrow('invalid_price_response');
+});

@@ -1,5 +1,7 @@
 # Investigation — 2026-10-10
 
+Current checkout/API research (2026-10-11): [CHECKOUT-RESEARCH.md](CHECKOUT-RESEARCH.md). Actual 0.8.1 Steam validation: [VALIDATION-0.8.1.md](VALIDATION-0.8.1.md). The historical checkout limitations below are superseded only where the new report explicitly confirms behavior.
+
 ## Windows exit 53
 
 Original `bun run build` reproducibly returned 53 outside Steam/Program Files. Direct native `--help` returned signed `-1073741515` = unsigned `0xC0000135` (DLL loader failure), before reading configuration or Lua. `scripts/pe-imports.cjs` lists `VCRUNTIME140.dll` as a direct import; the file was absent from System32. Only similarly named CLR-specific DLLs were present, which are not replacements.

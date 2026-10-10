@@ -4,17 +4,17 @@ local window,count=0,0
 local function request(path,payload)
  local now=os.time();if now-window>=60 then window=now;count=0 end
  if count>=60 then return json.encode({status='rate_limited'}) end;count=count+1
- local opts={timeout=12,follow_redirects=false,verify_ssl=true,user_agent='Steam-GGSEL/0.8.0',headers={Accept='application/json'}}
+ local opts={timeout=12,follow_redirects=false,verify_ssl=true,user_agent='Steam-GGSEL/0.8.1',headers={Accept='application/json'}}
  local ok,r
  if payload then opts.headers['Content-Type']='application/json';ok,r=pcall(http.post,'https://api.ggsel.com'..path,json.encode(payload),opts)
  else ok,r=pcall(http.get,'https://api.ggsel.com'..path,opts) end
  if not ok or not r then return json.encode({status='network_error'}) end
  if r.status~=200 then return json.encode({status=r.status==404 and 'product_removed' or 'http_error',http_status=r.status}) end
  local mime=nil;for k,v in pairs(r.headers or {}) do if type(k)=='string' and k:lower()=='content-type' then mime=v end end
- if not mime or not mime:lower():find('application/json',1,true) then return json.encode({status='unexpected_content_type'}) end
+ if type(mime)~='string' or not mime:lower():find('application/json',1,true) then return json.encode({status='unexpected_content_type',http_status=r.status}) end
  if type(r.body)~='string' or #r.body>1000000 then return json.encode({status='invalid_response'}) end
  local valid,data=pcall(json.decode,r.body);if not valid or type(data)~='table' then return json.encode({status='invalid_response'}) end
- return json.encode({status='ok',data=data,fetched_at=now})
+ return json.encode({status='ok',data=data,fetched_at=os.time(),http_status=r.status})
 end
 local function valid_id(id)return type(id)=='string' and #id<=12 and id:match('^%d+$') end
 ---@ffi

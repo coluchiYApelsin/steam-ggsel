@@ -1,10 +1,11 @@
 import {flightRecords,normalize,toOffer,configurableOffer,variantEdition,type Offer} from './offers';
 import {isProductUrl} from './merchant';
+import {responseError,diagnosticSuffix} from './diagnostics';
 import {productOptions,defaultSelection,validateSelection,priceSelection,decodeQuote,selectionSummary,selectionProductUrl,type ProductOption,type Selection} from './options';
 type Obj=Record<string,any>;
 export type Product = {offer:Offer; description:string; additional:string; image?:string; sellerReviews?:number; positiveReviews?:number; fetchedAt:number;options:ProductOption[]};
 export function productError(error:unknown):string{
- const key=error instanceof Error?error.message:String(error);const messages:Record<string,string>={network_error:'GGSEL временно недоступен.',http_error:'GGSEL отклонил запрос.',product_removed:'Товар удалён или больше недоступен.',product_unavailable:'Товар недоступен.',invalid_response:'Ответ GGSEL невозможно обработать.',unexpected_content_type:'GGSEL вернул ответ другого типа.',rate_limited:'Слишком частые запросы. Подождите минуту и повторите.',identity_not_confirmed:'Соответствие товара, игры или продавца не подтверждено.',edition_not_confirmed:'Издание не подтверждено.',combination_unavailable:'Выбранная комбинация недоступна по ответу GGSEL.',invalid_price_response:'GGSEL не подтвердил корректную цену этой комбинации.',unsupported_options:'Формат параметров товара не поддерживается.',sensitive_option:'Этот товар требует чувствительные данные. Заполняйте их только на GGSEL.',unsupported_quantity:'Товары с расчётом количества пока не поддерживаются.',selected_variant_unconfirmed:'Состав выбранного варианта недостаточно подтверждён.',description_reference_unresolved:'Не удалось прочитать описание GGSEL.',access_blocked:'GGSEL запросил проверку доступа. Защита не обходится.'};return messages[key]??(/^(Заполните:|Вариант недоступен:|Несовместимые параметры|Параметр слишком длинный)/.test(key)?key:'Данные товара не подтверждены.');
+ const key=error instanceof Error?error.message:String(error);const messages:Record<string,string>={options_changed:'Параметры товара изменились на GGSEL. Вернитесь к игре и заново откройте карточку.',network_error:'GGSEL временно недоступен.',http_error:'GGSEL отклонил запрос.',product_removed:'Товар удалён или больше недоступен.',product_unavailable:'Товар недоступен.',invalid_response:'Ответ GGSEL невозможно обработать.',unexpected_content_type:'GGSEL вернул ответ другого типа.',rate_limited:'Слишком частые запросы. Подождите минуту и повторите.',identity_not_confirmed:'Соответствие товара, игры или продавца не подтверждено.',edition_not_confirmed:'Издание не подтверждено.',combination_unavailable:'Выбранная комбинация недоступна по ответу GGSEL.',invalid_price_response:'GGSEL не подтвердил корректную цену этой комбинации.',unsupported_options:'Формат параметров товара не поддерживается.',sensitive_option:'Этот товар требует чувствительные данные. Заполняйте их только на GGSEL.',unsupported_quantity:'Товары с расчётом количества пока не поддерживаются.',selected_variant_unconfirmed:'Состав выбранного варианта недостаточно подтверждён.',description_reference_unresolved:'Не удалось прочитать описание GGSEL.',access_blocked:'GGSEL запросил проверку доступа. Защита не обходится.'};return (messages[key]??(/^(Заполните:|Вариант недоступен:|Несовместимые параметры|Параметр слишком длинный)/.test(key)?key:'Данные товара не подтверждены.'))+diagnosticSuffix(error);
 }
 function plain(value:unknown):string {
  if(typeof value!=='string')return '';
@@ -40,6 +41,7 @@ export function verifiedProduct(html:string,expected:Offer,gameTitle:string,fetc
  if(!offer||offer.edition!==expected.edition||offer.kind!==expected.kind||(expected.sellerId?offer.sellerId!==expected.sellerId:normalize(offer.seller)!==normalize(expected.seller)))throw new Error('identity_not_confirmed');
  const edition=normalize(String(detail.category.edition??'')).replace(/ edition$/,'');
  if(!expected.configurable&&edition!==offer.edition && !(offer.kind==='Аккаунт'&&offer.edition==='standard'&&!edition&&detail.category.content_type_id===1))throw new Error('edition_not_confirmed');
+ const options=productOptions(detail.options);
  offer.conditions=detail.options.map((o:Obj)=>[o.label,o.required?'Обязательный выбор':'',...(Array.isArray(o.variants)?o.variants.map((v:Obj)=>[v.text,v.modify,v.disabled?'Недоступно':''].filter(Boolean).join(' · ')):[]),o.comment].filter(x=>typeof x==='string'&&x.trim()).join('\n')).filter(Boolean);
  let image:string|undefined;
  try{const u=new URL(detail.images);if(u.protocol==='https:'&&u.hostname==='img.ggsel.net'&&!u.username&&!u.password&&!u.port)image=u.href;}catch{}
@@ -47,7 +49,7 @@ export function verifiedProduct(html:string,expected:Offer,gameTitle:string,fetc
  const sellerReviews=Number.isSafeInteger(positive)&&positive>=0&&Number.isSafeInteger(negative)&&negative>=0?positive+negative:undefined;
  const positiveReviews=Number.isSafeInteger(detail.cnt_goodresponses)&&detail.cnt_goodresponses>=0?detail.cnt_goodresponses:undefined;
  if(detail.prices_unit)throw new Error('unsupported_quantity');
- return {offer,description,additional,image,sellerReviews,positiveReviews,fetchedAt,options:productOptions(detail.options)};
+ return {offer,description,additional,image,sellerReviews,positiveReviews,fetchedAt,options};
 }
 const CSS=`
 #ggsel-product-page{color:#c7d5e0;background:radial-gradient(ellipse at top,#29465b,#1b2838 65%);min-height:85vh;padding:64px 24px 64px;font:14px Arial,sans-serif;box-sizing:border-box}
@@ -89,7 +91,7 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
    const slug=new URL(expected.url).pathname.split('/').pop()!;
    const raw=await fetchDetail(expected.id,slug);const data=typeof raw==='string'?JSON.parse(raw):raw;
    if(!active)return;
-   if(data?.status!=='ok')throw new Error(data?.status==='http_error'&&data.http_status===404?'product_removed':data?.status??'product_unavailable');
+   if(data?.status!=='ok')throw responseError(data?.http_status===404?{...data,status:'product_removed'}:data,'product_unavailable');
    if(typeof data.html!=='string'||typeof data.fetched_at!=='number')throw new Error('invalid_response');
    const product=verifiedProduct(data.html,expected,gameTitle,data.fetched_at),o=product.offer;
    const grid=el('div','gp-grid'),left=el('div'),right=el('aside');
@@ -125,8 +127,9 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
     if(!active)return false;
     const request=++quoteGeneration;quote=undefined;pay.disabled=true;handoff.replaceChildren();amount.textContent='Цена требует уточнения';quoteStatus.textContent='Проверка цены и наличия на GGSEL…';
     try{
-     let fresh=product;if(!initial){const rawFresh=await fetchDetail(o.id,slug);const freshData=typeof rawFresh==='string'?JSON.parse(rawFresh):rawFresh;if(freshData?.status!=='ok')throw new Error(freshData?.status==='http_error'&&freshData.http_status===404?'product_removed':freshData?.status??'product_unavailable');fresh=verifiedProduct(freshData.html,expected,gameTitle,freshData.fetched_at);}
-     const discrete=fresh.options.filter(option=>option.variants.length);const invalid=validateSelection(discrete,selection);if(invalid)throw new Error(invalid);
+     let fresh=product;if(!initial){const rawFresh=await fetchDetail(o.id,slug);const freshData=typeof rawFresh==='string'?JSON.parse(rawFresh):rawFresh;if(freshData?.status!=='ok')throw responseError(freshData?.http_status===404?{...freshData,status:'product_removed'}:freshData,'product_unavailable');fresh=verifiedProduct(freshData.html,expected,gameTitle,freshData.fetched_at);}
+     if(JSON.stringify(fresh.options)!==JSON.stringify(product.options))throw new Error('options_changed');
+     const discrete=fresh.options.filter(option=>option.variants.length);const invalid=validateSelection(discrete,Object.fromEntries(discrete.map(option=>[option.id,selection[option.id]??[]])));if(invalid)throw new Error(invalid);
      const variant=fresh.options.find(option=>/edition|version|издани|верси/i.test(option.label));const variantLabel=variant?.variants.find(v=>selection[variant.id]?.includes(v.id))?.label;
      const selectedEdition=variantLabel?variantEdition(variantLabel,gameTitle):o.edition;
      if(variantLabel&&!selectedEdition)throw new Error('selected_variant_unconfirmed');
@@ -143,10 +146,12 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
    }
    const recheck=el('button','gp-back','Проверить цену снова') as HTMLButtonElement;recheck.type='button';recheck.onclick=()=>void check();buy.append(recheck);
    pay.onclick=async()=>{const before=quote?.amount;clearTimeout(debounce);if(!await check())return;if(!active||!quote)return;
-    const confirmed=quote as {amount:number;fetchedAt:number};const linkData=selectionProductUrl(o.url,product.options,selection);
+    const generation=quoteGeneration;const selected=structuredClone(selection);
+    const confirmed=quote as {amount:number;fetchedAt:number};const linkData=selectionProductUrl(o.url,product.options,selected);
     handoff.append(el('p','gp-notice',before!==confirmed.amount?`Цена изменилась: ${before?.toLocaleString('ru-RU')} ₽ → ${confirmed.amount.toLocaleString('ru-RU')} ₽. Подтвердите новую цену переходом ниже.`:`Цена повторно подтверждена: ${confirmed.amount.toLocaleString('ru-RU')} ₽.`));
-    handoff.append(el('p','gp-checkout-notice',linkData.complete?'GGSEL использует предвыбор вариантов в ссылке. Проверьте их после открытия: платёжная цена определяется площадкой.':'Варианты передаются, где поддерживается предвыбор GGSEL. Текстовые поля и несколько флажков не передаются: заполните их на GGSEL повторно.'));
-    const link=el('a','gp-payment-link','Подтвердить и открыть GGSEL для оплаты') as HTMLAnchorElement;link.href=linkData.url;link.target='_blank';link.rel='noopener noreferrer';link.onclick=(event)=>{if(!quote||Date.now()/1000-quote.fetchedAt>15){event.preventDefault();handoff.replaceChildren(el('p','','Подтверждение устарело. Нажмите «Продолжить к оплате» ещё раз.'));}};handoff.append(link);
+    handoff.append(el('p','gp-meta',`Товар ${o.id} · ${o.seller}\n${selectionSummary(product.options,selected)}`));
+    handoff.append(el('p','gp-checkout-notice',linkData.complete?'Ссылка содержит предвыбор по формату клиента GGSEL. Его применение в checkout не подтверждено. Сверьте варианты и итоговую цену на GGSEL.':'Варианты передаются, где поддерживается предвыбор GGSEL. Текстовые поля и несколько флажков не передаются: заполните их на GGSEL повторно.'));
+    const link=el('a','gp-payment-link','Подтвердить и открыть оформление на GGSEL') as HTMLAnchorElement;link.href=linkData.url;link.target='_blank';link.rel='noopener noreferrer';link.onclick=(event)=>{if(!active||generation!==quoteGeneration||!quote||Date.now()/1000-quote.fetchedAt>15){event.preventDefault();handoff.replaceChildren(el('p','','Подтверждение устарело. Нажмите «Продолжить к оплате» ещё раз.'));return;}link.remove();handoff.append(el('p','gp-checkout-status','Передан переход к оформлению на GGSEL. Заказ плагином не создан. Статус заказа и оплаты неизвестен; проверяйте его на GGSEL.'));};handoff.append(link);
    };
    right.append(buy,seller);grid.append(left,right);body.replaceChildren(grid,el('p','gp-origin',`Источник: GGSEL · товар ${o.id}. Итоговая цена и доступность определяются площадкой. Условия возврата не предоставлены отдельным полем; читайте условия продавца и правила GGSEL перед оплатой.`));
    const reviews=el('section','gp-panel');reviews.append(el('h2','','Отзывы покупателей GGSEL'),el('p','','Загрузка отзывов…'));left.append(reviews);

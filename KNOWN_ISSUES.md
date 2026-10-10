@@ -1,9 +1,12 @@
 # Confirmed limitations
 
-Current version 0.8.0: see docs/VALIDATION-0.8.0.md. Real options and live server pricing now work in the native Steam page. The older 0.7.0 notes below describe the previous release.
+Current version 0.8.1: see docs/VALIDATION-0.8.1.md and docs/CHECKOUT-RESEARCH.md. Real options and live server pricing work in the native Steam page. The older 0.7.0 notes below are historical and are superseded where the current validation explicitly confirms behavior.
 
-- Original-product option preselection is derived from the actual GGSEL client codec; visual application on the merchant page and preservation in a final order are not confirmed. Always check parameters on GGSEL. Free text and multiple checkboxes require re-entry.
+- Original-product option preselection was visually confirmed on the real merchant page for product 5283641 (Ultimate + region). Preservation in a final order remains unconfirmed. Always check parameters and currency on GGSEL. Free text, multiple checkboxes and clearing defaults require re-entry/checking.
 - No order is created by the plugin. Payment, authorization, 3DS and checkout are untested.
+- Official documentation examined describes seller APIs, not a supported third-party buyer order/payment contract. Internal buy/order mutations are deliberately not called. Trusted status reporting and automatic closing after payment require GGSEL support.
+- A target=_blank HTTPS link opened a separate Steam Browser window in the tested installation. Window shape/ownership is not guaranteed across clients. Closing it is not evidence of payment; the plugin reports an unknown status.
+- The current schema must match the displayed options before another quote; changed options require reopening the card. This conservative check may also reject harmless availability/label changes.
 - S.T.A.L.K.E.R. 2 category search currently returns unrelated/empty results; these are rejected. General localized-title equivalence remains unsupported.
 - Variant stock may be unknown; quotes do not reserve goods. Quantity calculators and ambiguous mixed selectors remain unsupported.
 - Selection memory lasts only within the current Steam document. Common seller descriptions do not invent per-variant conditions.

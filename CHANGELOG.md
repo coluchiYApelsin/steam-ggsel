@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.1 — 2026-10-11
+
+- Harden checkout handoff with a confirmed selection summary, changed-schema rejection, expired/detached-link protection and an explicitly unknown payment status.
+- Reject malformed/duplicate option identifiers and additional payment/authentication secret fields. Preserve real HTTP diagnostics; reject missing HTML MIME and stop catalog discovery on access errors.
+- Verify current GGSEL client preselection and visually confirm Ultimate/region on the real merchant page in a separate Steam Browser window without creating an order.
+- Research official seller APIs; do not call undocumented buyer/order/payment mutations. Document the remaining partner API requirement and synchronize README/HANDOFF.
+- Pass 49 tests / 219 expectations, TypeScript and Starlight verification. See docs/VALIDATION-0.8.1.md and docs/CHECKOUT-RESEARCH.md.
+
 ## 0.8.0 — 2026-10-10
 
 - Add real product option controls, in-document selection memory, public GGSEL server quotes and fresh verification before payment. Invalidate stale prices and require confirmation of a changed price.

@@ -29,6 +29,25 @@ test('real edition selector invalidates old price, requotes IDs and remembers se
  closeProductPage();await openProductPage(offer,'1091500',game);expect((w.document.querySelector('[data-option-id="448562"]') as any).value).toBe('1177048');
  }finally{closeProductPage();w.happyDOM.abort();}
 });
+
+test('changed server option schema blocks checkout before a new quote',async()=>{
+ const w=setup();w.happyDOM.setURL('https://store.steampowered.com/app/1091500/');const fixture=readFileSync(new URL('./fixtures/configurable-5283641.html',import.meta.url),'utf8');const game='Cyberpunk 2077';
+ const offer=productOffer(fixture,{id_goods:5283641,url:'cyberpunk-2077-vybor-izdaniia-vse-regiony-5283641'},game)!;
+ w.document.body.innerHTML='<div class="responsive_page_template_content">Steam</div>';let calls=0,changed=false;
+ Object.defineProperty(globalThis,'backend',{configurable:true,value:{...backend,getGgselPrice:async()=>{calls++;return {status:'ok',data:{success:true,data:{count:1,amount:2990}},fetched_at:Math.floor(Date.now()/1000)};}}});
+ try{await openProductPage(offer,'1091500',game,async()=>({status:'ok',html:changed?fixture.replaceAll('1177048','9999999'):fixture,fetched_at:1}));changed=true;
+ (w.document.querySelector('.gp-continue') as any).click();await new Promise(r=>setTimeout(r,20));expect(calls).toBe(1);expect(w.document.querySelector('.gp-payment-link')).toBeNull();expect(w.document.querySelector('#ggsel-product-page')!.textContent).toContain('options_changed');expect(w.document.querySelector('.gp-price')!.textContent).toBe('Цена требует уточнения');
+ }finally{closeProductPage();w.happyDOM.abort();}
+});
+
+test('handoff reports unknown payment status and stale detached confirmations cannot navigate',async()=>{
+ const w=setup();w.document.body.innerHTML='<div class="responsive_page_template_content">Steam</div>';
+ try{await openProductPage(expected,'2677660',title);(w.document.querySelector('.gp-continue') as any).click();await new Promise(r=>setTimeout(r,20));
+ const link=w.document.querySelector('.gp-payment-link')!;expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+ const click=new w.MouseEvent('click',{cancelable:true});link.dispatchEvent(click);expect(click.defaultPrevented).toBe(false);expect(w.document.querySelector('.gp-checkout-status')!.textContent).toContain('Статус заказа и оплаты неизвестен');expect(w.document.querySelector('.gp-payment-link')).toBeNull();
+ (w.document.querySelector('.gp-continue') as any).click();await new Promise(r=>setTimeout(r,20));const stale=w.document.querySelector('.gp-payment-link')!;closeProductPage();const oldClick=new w.MouseEvent('click',{cancelable:true});stale.dispatchEvent(oldClick);expect(oldClick.defaultPrevented).toBe(true);
+ }finally{closeProductPage();w.happyDOM.abort();}
+});
 test('long Flight descriptions resolve UTF-8 byte lengths without executing merchant code',()=>{
  const text='<p>Регион: Россия / СНГ 🌎</p>';const record=`5c:T${new TextEncoder().encode(text).length.toString(16)},${text}\n6:{}`;
  const source=`<script>self.__next_f.push(${JSON.stringify([1,record])})</script>`;

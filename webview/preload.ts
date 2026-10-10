@@ -1,13 +1,14 @@
 import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, productOffer, type Offer } from './offers';
 import {openProductPage} from './product-page';
 import {discoverCatalog} from './catalog';
+import {diagnosticSuffix} from './diagnostics';
 import {decodeQuote,defaultSelection,priceSelection,productOptions} from './options';
 import {productRecord} from './offers';
 const WRAP = 'ggsel-offers';
 const STYLE = 'ggsel-offers-style';
 const appId = () => location.hostname === 'store.steampowered.com' ? location.pathname.match(/^\/app\/(\d+)(?:\/|$)/)?.[1] ?? null : null;
 const create = (tag: string, cls = '', text = '') => { const el = document.createElement(tag); el.className = cls; el.textContent = text; return el; };
-type Result = { status: string; offers: Offer[]; fetchedAt?: number; gameTitle?: string };
+type Result = { status: string; offers: Offer[]; fetchedAt?: number; gameTitle?: string; diagnostic?:string };
 export function startWidget(fetchOffers: (id: string, title: string) => Promise<unknown> = (id, title) => backend.getGgselOffers(id, title)) {
   let current = '', generation = 0, scheduled = false, stopped = false;
   let loaded: Result = { status: 'loading', offers: [] };
@@ -55,7 +56,7 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
       const match = matchPurchaseBlock(block,appId()!,title());
       const {heading,edition} = match;
       const offers = loaded.gameTitle && normalize(loaded.gameTitle) === normalize(title()) ? loaded.offers.filter(o => o.edition === edition).sort((a,b) => a.price-b.price) : [];
-      const signature = JSON.stringify([current, match, loaded.status, loaded.fetchedAt, offers]);
+      const signature = JSON.stringify([current, match, loaded.status, loaded.diagnostic, loaded.fetchedAt, offers]);
       let root = block.querySelector(`.${WRAP}`) as HTMLElement | null;
       if (root?.dataset.signature === signature) continue;
       console.info('[Steam × GGSEL] match', JSON.stringify({appid:appId(),title:title(),...match,status:loaded.status,accepted:loaded.offers.map(o=>({id:o.id,edition:o.edition})),matched:offers.length}));
@@ -70,7 +71,7 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
       } else {
         const messages: Record<string,string> = { no_matching_catalog:'В поиске GGSEL не найден каталог с подтверждённым названием игры.', loading: 'Загрузка и проверка предложений…', unsupported_game: 'Для этой игры пока нет проверенной привязки к каталогу GGSEL.', network_error: 'GGSEL недоступен. Повторите позже.', http_error: 'GGSEL отклонил запрос. Доступ не обходится.', rate_limited: 'Слишком частые запросы. Повторите через несколько секунд.', backend_unavailable: 'Не удалось получить ответ от плагина.', invalid_response: 'GGSEL вернул неподдерживаемый ответ.', unexpected_content_type:'GGSEL вернул ответ другого типа. Цены не показаны.', access_blocked:'GGSEL запросил проверку доступа. Защита не обходится.', catalog_mismatch:'Полученный каталог не соответствует названию игры. Цены не показаны.', unrecognized_catalog_response:'Не удалось распознать ответ каталога GGSEL. Цены не показаны.', oversized_catalog:'Ответ GGSEL превышает допустимый размер.', product_verification_failed:'Не удалось подтвердить данные страниц товаров. Повторите позже.' };
         const message = loaded.status === 'ok' ? (edition ? 'Подходящих предложений для этого издания нет.' : 'Точное соответствие этого DLC, набора или издания не подтверждено.') : messages[loaded.status] ?? 'Источник предложений недоступен.';
-        const status = create('div', 'ggsel-meta', message); status.setAttribute('role','status'); root.append(status);
+        const status = create('div', 'ggsel-meta', message+(loaded.diagnostic??'')); status.setAttribute('role','status'); root.append(status);
         if (loaded.status !== 'loading') { const retry = create('button','','Повторить') as HTMLButtonElement; retry.type='button'; retry.onclick=()=>{forceRefresh=true;current='';refresh();}; root.append(retry); }
       }
     }
@@ -111,7 +112,8 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     } catch (e) {
       if (stopped || request !== generation || appId() !== id) return;
       loaded = { status:e instanceof Error && ['network_error','http_error','rate_limited','unexpected_content_type','no_matching_catalog','unsupported_game','access_blocked','catalog_mismatch','unrecognized_catalog_response','oversized_catalog','invalid_response'].includes(e.message) ? e.message : 'backend_unavailable', offers:[] };
-      console.warn('[Steam × GGSEL]', e instanceof Error ? e.message : 'RPC failed');
+      loaded.diagnostic=diagnosticSuffix(e);
+      console.warn('[Steam × GGSEL]', e instanceof Error ? e.message+loaded.diagnostic : 'RPC failed');
     } finally { clearTimeout(timer); }
     paint();
   }
