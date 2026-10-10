@@ -1,5 +1,13 @@
 # Confirmed limitations
 
+Current version 0.8.0: see docs/VALIDATION-0.8.0.md. Real options and live server pricing now work in the native Steam page. The older 0.7.0 notes below describe the previous release.
+
+- Original-product option preselection is derived from the actual GGSEL client codec; visual application on the merchant page and preservation in a final order are not confirmed. Always check parameters on GGSEL. Free text and multiple checkboxes require re-entry.
+- No order is created by the plugin. Payment, authorization, 3DS and checkout are untested.
+- S.T.A.L.K.E.R. 2 category search currently returns unrelated/empty results; these are rejected. General localized-title equivalence remains unsupported.
+- Variant stock may be unknown; quotes do not reserve goods. Quantity calculators and ambiguous mixed selectors remain unsupported.
+- Selection memory lasts only within the current Steam document. Common seller descriptions do not invent per-variant conditions.
+
 Version 0.7.0 uses a native full product page in the existing Steam document. The previous original-site navigation in 0.6.0 did not meet the in-page requirement and has been removed. See docs/VALIDATION-0.7.0.md.
 
 - Alternate catalog cards require product verification, limited to eight candidates; unverified offers remain hidden. Premium is now supported with exact category/edition matching.

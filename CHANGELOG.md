@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 — 2026-10-10
+
+- Add real product option controls, in-document selection memory, public GGSEL server quotes and fresh verification before payment. Invalidate stale prices and require confirmation of a changed price.
+- Add real buyer reviews, explicit option IDs and region/account/payment distinctions. Reject unavailable, unknown and credential-bearing options.
+- Discover actual catalog slugs through public category search; preserve independent catalog/product checks. Normalize punctuation and abbreviations; add reviewed DOOM 2016 AppID binding.
+- Retry bypasses local caches. Add fixture-backed option, price failure, checkout recheck, search and Lua API security tests.
+- See docs/VALIDATION-0.8.0.md for real Steam results and unverified checkout limitations.
+
 ## 0.7.0 — 2026-10-10
 
 - Replace original-site navigation with a full native product page in the current Steam Store DOM. Keep the Steam origin, game nodes and scroll state; no new browsing context while viewing offers.
