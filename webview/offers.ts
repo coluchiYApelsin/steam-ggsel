@@ -1,4 +1,4 @@
-export type Edition = 'standard' | 'deluxe' | 'ultimate' | 'complete';
+export type Edition = 'standard' | 'deluxe' | 'ultimate' | 'complete' | 'premium';
 export type Offer = {
   id: string; title: string; edition: Edition; kind: 'Steam-ключ' | 'Steam Gift' | 'Аккаунт';
   price: number; priceFrom: boolean; seller: string; sellerRating?: number;
@@ -11,7 +11,7 @@ export function editionForHeading(heading: string, title: string): Edition | nul
   const h = normalize(heading).replace(/^(buy|купить|purchase) /, '');
   const base = normalize(title);
   if (h === base || h === `${base} standard edition`) return 'standard';
-  for (const e of ['deluxe', 'ultimate', 'complete'] as const) {
+  for (const e of ['deluxe', 'ultimate', 'complete', 'premium'] as const) {
     if (h === `${base} ${e}` || h === `${base} ${e} edition`) return e;
   }
   return null;
@@ -43,7 +43,7 @@ export function matchPurchaseBlock(block: Element, appid: string, gameTitle: str
 }
 type Obj = Record<string, any>;
 // JSON only: never evaluate scripts received from GGSEL or insert their HTML into Steam.
-export function catalogProducts(html: string, expectedTitle: string): Obj[] {
+export function flightRecords(html: string): unknown[] {
   if (html.length > 3000000) throw new Error('oversized_catalog');
   const records: unknown[] = [];
   let flight = '';
@@ -57,19 +57,27 @@ export function catalogProducts(html: string, expectedTitle: string): Obj[] {
     if (i < 0) continue;
     try { records.push(JSON.parse(line.slice(i + 1))); } catch { /* Flight references / text */ }
   }
+  if (!records.length) throw new Error(/<title>[^<]*(captcha|access denied|verify|just a moment)/i.test(html) ? 'access_blocked' : 'unrecognized_catalog_response');
+  return records;
+}
+export function catalogProducts(html: string, expectedTitle: string): Obj[] {
+  const records=flightRecords(html);
   const products = new Map<string, Obj>();
   let verifiedCatalog = false;
+  let catalogFound=false, emptyItems=false;
   function walk(v: unknown, depth = 0) {
     if (!v || typeof v !== 'object' || depth > 45) return;
     const o = v as Obj;
-    if (o.digi_catalog && normalize(String(o.name)) === normalize(expectedTitle)) verifiedCatalog = true;
+    if (o.digi_catalog) {catalogFound=true;if(normalize(String(o.name)) === normalize(expectedTitle)) verifiedCatalog=true;}
+    if (Array.isArray(o.items) && o.items.length===0) emptyItems=true;
     if (Number.isSafeInteger(o.id_goods) && typeof o.name === 'string' && typeof o.url === 'string') {
-      if (o.seller && !products.has(String(o.id_goods))) products.set(String(o.id_goods), o);
+      if ((o.seller || typeof o.seller_name==='string') && !products.has(String(o.id_goods))) products.set(String(o.id_goods), o);
     }
     Object.values(o).forEach(x => walk(x, depth + 1));
   }
   records.forEach(x => walk(x));
-  if (!verifiedCatalog || !products.size) throw new Error('catalog_schema_changed');
+  if (!verifiedCatalog) throw new Error(catalogFound ? 'catalog_mismatch' : 'unrecognized_catalog_response');
+  if (!products.size && !emptyItems) throw new Error('unrecognized_catalog_response');
   return [...products.values()];
 }
 
@@ -84,12 +92,12 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
   if (options.some(o => /edition|издани|верси/i.test(String(o.label)))) return reject('seller_edition_selector');
   if (options.some(o => o.type === 'radio' && !/region|регион|стран/i.test(String(o.label)))) return reject('unrecognized_order_selector');
   let rest = n.slice(base.length).trim();
-  const editions = ['standard', 'deluxe', 'ultimate', 'complete'] as const;
+  const editions = ['standard', 'deluxe', 'ultimate', 'complete', 'premium'] as const;
   const found = editions.filter(e => new RegExp(`\\b${e}\\b`).test(rest));
   if (found.length > 1) return reject('ambiguous_edition');
   const edition: Edition = found[0] ?? 'standard';
   // Unknown extra tokens can indicate another game, DLC or edition: reject them.
-  rest = rest.replace(/\b(standard|deluxe|ultimate|complete|edition|steam|key|gift|account|pc|auto|delivery|world|worldwide|global|except|ru|rb|by|ua|kz|cis|sng|tr|ar)\b/g, '').trim();
+  rest = rest.replace(/\b(standard|deluxe|ultimate|complete|premium|edition|steam|key|gift|account|pc|auto|delivery|autodelivery|world|worldwide|global|except|ru|rb|by|ua|kz|cis|sng|tr|ar|ww)\b/g, '').trim();
   if (rest || /edition choice|edition selection/i.test(title)) return reject('unrecognized_title_tokens');
   const account = /\baccount\b|аккаунт/i.test(title);
   const key = /\bkey\b|ключ/i.test(title);
@@ -97,9 +105,11 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
   if (account && key) return reject('ambiguous_activation');
   if (!account && !key && /\bauto\b/i.test(title) && !/\bgift\b/i.test(title) && p.content_type_id !== 48) return reject('unconfirmed_auto_activation');
   if (!account && Number(key) + Number(gift) !== 1) return reject('ambiguous_activation');
+  if (!p.seller && typeof p.seller_name==='string') return reject('product_details_required');
   const price = Number(p.price_wmr);
-  if (!Number.isFinite(price) || price <= 0 || p.forbidden_type !== 0 || p.is_preorder) return reject('invalid_price_or_unavailable');
+  if (!Number.isFinite(price) || price <= 0 || p.forbidden_type !== 0 || p.is_preorder || p.is_active===false) return reject('invalid_price_or_unavailable');
   if (typeof p.url !== 'string' || !/^[a-z0-9-]+-\d+$/.test(p.url) || !p.url.endsWith(`-${p.id_goods}`)) return reject('invalid_product_url');
+  if(edition==='standard' && /(?:^|-)(dlc|upgrade|premium|ultimate|deluxe|complete|bundle)(?:-|$)/.test(p.url)) return reject('contradictory_product_url');
   if (typeof p.seller?.name_seller !== 'string' || !p.seller.name_seller) return reject('missing_seller');
   const regionOption = options.find(o => /region|регион|стран/i.test(String(o.label)));
   let region = 'Регион не указан — проверьте на GGSEL';
@@ -109,10 +119,12 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
   } else {
     const match = title.match(/(?:WORLD(?:WIDE)?|GLOBAL|RU|CIS|UA|KZ)(?:[\s/+-]*(?:EXCEPT|RU|RB|BY|CIS|UA|KZ|WORLD(?:WIDE)?))*/i);
     if (match) region = `Регион по названию: ${match[0]}`;
+    if(typeof p.verified_region==='string') region=`Регион по описанию продавца: ${p.verified_region}`;
   }
   const sellerRating = p.seller.rating;
   const conditions = options.map(o => [o.label, ...(Array.isArray(o.variants) ? o.variants.map((v: Obj) => v.text) : []), o.comment]
     .filter(x => typeof x === 'string' && x.trim()).join(' · ')).filter(Boolean);
+  if(typeof p.verified_description==='string' && p.verified_description) conditions.push(p.verified_description);
   return {reason:'accepted',offer:{ id: String(p.id_goods), title, edition,
     kind: account ? 'Аккаунт' : key ? 'Steam-ключ' : 'Steam Gift', price,
     priceFrom: options.some(o => Array.isArray(o.variants) && o.variants.length > 1),
@@ -122,3 +134,22 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
     region, conditions, url: `https://ggsel.net/en/catalog/product/${p.url}` }};
 }
 export function toOffer(p:Obj,gameTitle:string):Offer|null{return inspectOffer(p,gameTitle).offer;}
+
+// Alternative catalog cards omit seller statistics and option selectors. Never render
+// those cards until the actual product page independently confirms its identity.
+export function productOffer(html:string, candidate:Obj, gameTitle:string):Offer|null {
+  let detail:Obj|undefined;
+  function walk(v:unknown,depth=0){if(!v||typeof v!=='object'||depth>45)return;const o=v as Obj;
+    if(String(o.id_goods)===String(candidate.id_goods)&&o.category&&o.seller&&Array.isArray(o.options)) detail=o;
+    Object.values(o).forEach(x=>walk(x,depth+1));}
+  flightRecords(html).forEach(x=>walk(x));
+  if(!detail || normalize(String(detail.baseCategory_name))!==normalize(gameTitle) || detail.category.platform!=='Steam') return null;
+  const edition=editionForHeading(`${gameTitle} ${detail.category.edition}`,gameTitle);
+  if(!edition)return null;
+  const text=String(detail.info??'').replace(/<br\s*\/?\s*>|<\/p>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();
+  const region=text.match(/(?:region(?: of (?:use|activation))?|регион(?: активации)?)\s*:\s*([^\n]{2,160})/i)?.[1]?.trim();
+  const p={...detail,url:candidate.url,forbidden_type:detail.category.forbidden_type,content_type_id:detail.category.content_type_id,
+    seller:{...detail.seller,rating:detail.seller.statistics?.rating},verified_region:region,verified_description:text.slice(0,6000)};
+  const offer=toOffer(p,gameTitle);
+  return offer?.edition===edition ? offer : null;
+}

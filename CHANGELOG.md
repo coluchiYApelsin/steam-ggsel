@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 — 2026-10-10
+
+- Open real GGSEL products in the main Steam Store WebView; add Back/Close and restore game scroll and expanded offers.
+- Use the real Millennium browser CSS hook; visually verify product-only Steam styling, leaving checkout and external providers unchanged.
+- Fix Indiana alternate catalog parsing; verify incomplete cards against exact product pages, seller statistics, edition, type, region and price.
+- Distinguish empty, mismatched, unrecognized and access-blocked responses; validate HTTP status and Content-Type.
+- With explicit authorization, fix Clash's steamwebhelper process rule; verify DIRECT GGSEL traffic while OpenAI remains proxied.
+- Pass 28 tests / 95 assertions, TypeScript and container checks. Verify both games in real Steam. Checkout/payment remains untested.
+
 ## 0.5.1 — 2026-10-10
 
 - Fix the empty purchase heading on current Steam pages: recognize `h2` as well as legacy `h1`. Live diagnostics confirmed the AppID/title/catalog were correct while both purchase headings were empty.

@@ -35,3 +35,16 @@ Reduced public listing fixtures exist only under tests/fixtures. They are never 
 Live Russian Steam diagnostics identified an empty purchase heading: current markup uses `h2`, whereas the old selector looked for `h1`. The game title and AppID were correct, and real GGSEL catalog data reached the widget. The base purchase carries package 367653; the full-edition block carries bundle 32470. Recognition now supports current headings, treats zero bundle IDs as absent, and accepts only the reviewed bundle with the exact expected game and edition title.
 
 Steam's [Ultimate Edition bundle 32470](https://store.steampowered.com/bundle/32470/?l=english) contains Cyberpunk 2077 and Phantom Liberty. This specific bundle maps to GGSEL Ultimate, including the Russian Steam title «Полное издание»; arbitrary bundles are still rejected. Live visual verification now passed with four Standard and one Ultimate offer. See VALIDATION-0.5.1.md for prices, rejection counts and artifact hash.
+# 0.6.0 research supplement
+
+GGSEL CSP frame-ancestors prevents embedding in a Steam iframe. Top-level navigation in the existing Store WebView was verified instead. Native Millennium implements foreign-domain injection via registered hooks; the real Lua add_browser_css API is used and its path resolves under Millennium/themes. The framework manages its own isolated world/CSP behavior; this plugin does not implement an iframe bypass or alter merchant response headers.
+
+Primary sources:
+- https://github.com/SteamClientHomebrew/Millennium/blob/main/src/engine/plugin_webkit_world_mgr.cc
+- https://github.com/SteamClientHomebrew/Millennium/blob/main/src/engine/target_url.cc
+- https://github.com/SteamClientHomebrew/Millennium/blob/main/src/bindings/webkit.cc
+- https://github.com/SteamClientHomebrew/Millennium/blob/main/src/lua_host/api/millennium.cc
+- https://github.com/clash-verge-rev/clash-verge-rev.github.io/blob/main/docs/guide/rules.md
+
+Indiana returned HTTP 200 text/html and 61 goods; its alternative template omitted nested seller/options. Exact product verification fixes the parser without weakening matching. Windows proxy was enabled on localhost:7897, TUN disabled. With explicit authorization the incorrect DOMAIN rule was replaced by PROCESS-NAME in persistent and active Clash configurations. Core connections confirm GGSEL DIRECT and OpenAI still proxied. Private backups are excluded from releases. Full evidence: VALIDATION-0.6.0.md.
+

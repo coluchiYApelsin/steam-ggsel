@@ -2,6 +2,12 @@ local json = require("json")
 local http = require("http")
 local cache = {}
 local last_request = 0
+local function content_type(response)
+    for key,value in pairs(response.headers or {}) do
+        if type(key)=="string" and key:lower()=="content-type" and type(value)=="string" then return value:lower() end
+    end
+    return nil
+end
 -- Reviewed overrides. Other public catalog paths are candidates, never confirmed matches.
 local catalogs = {
     ["1091500"] = "cyberpunk-2077",
@@ -31,7 +37,7 @@ function getGgselOffers(appid, title)
     last_request = now
     local ok, response = pcall(http.get, "https://ggsel.net/en/catalog/" .. slug, {
         timeout = 15, follow_redirects = false, verify_ssl = true,
-        user_agent = "Steam-GGSEL/0.5.0 (public catalog comparison)",
+        user_agent = "Steam-GGSEL/0.6.0 (public catalog comparison)",
         headers = { ["Accept"] = "text/html" },
     })
     local result
@@ -43,9 +49,12 @@ function getGgselOffers(appid, title)
         result = { status = "http_error", http_status = response.status }
     elseif type(response.body) ~= "string" or #response.body > 3000000 then
         result = { status = "invalid_response" }
+    elseif content_type(response) and not content_type(response):find("text/html", 1, true) then
+        result = { status = "unexpected_content_type" }
     else
         result = { status = "ok", html = response.body, fetched_at = now,
-            catalog_title = expected, source = "https://ggsel.net/en/catalog/" .. slug }
+            catalog_title = expected, source = "https://ggsel.net/en/catalog/" .. slug,
+            http_status = response.status, content_type = content_type(response) }
     end
     local value = json.encode(result)
     -- Bound memory without writing browsing history to disk.
@@ -56,4 +65,54 @@ function getGgselOffers(appid, title)
     if count >= 8 then cache = {} end
     cache[cache_key] = { value = value, expires = now + (result.status == "ok" and 600 or 30) }
     return value
+end
+
+local product_cache = {}
+local product_window, product_count = 0, 0
+---@ffi
+---@param id string
+---@param slug string
+---@return string
+function getGgselProduct(id, slug)
+    if type(id) ~= "string" or not id:match("^%d+$") or #id > 12 or type(slug) ~= "string" or #slug > 250 or not slug:match("^[a-z0-9%-]+$") or slug:sub(-#id-1) ~= "-" .. id then
+        return json.encode({status="invalid_request"})
+    end
+    local now=os.time()
+    local hit=product_cache[id]
+    if hit and hit.slug == slug and hit.expires>now then return hit.value end
+    if now-product_window>=60 then product_window=now;product_count=0 end
+    if product_count>=12 then return json.encode({status="rate_limited"}) end
+    product_count=product_count+1
+    local ok,r=pcall(http.get,"https://ggsel.net/en/catalog/product/"..slug,{
+        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.6.0 (public product verification)",headers={Accept="text/html"}})
+    local result
+    if not ok or not r then result={status="network_error"}
+    elseif r.status~=200 then result={status="http_error",http_status=r.status}
+    elseif type(r.body)~="string" or #r.body>3000000 then result={status="invalid_response"}
+    elseif content_type(r) and not content_type(r):find("text/html",1,true) then result={status="unexpected_content_type"}
+    else result={status="ok",html=r.body,fetched_at=now} end
+    local count=0
+    for key,value in pairs(product_cache) do if value.expires<=now then product_cache[key]=nil else count=count+1 end end
+    if count>=12 then product_cache={} end
+    local value=json.encode(result)
+    product_cache[id]={slug=slug,value=value,expires=now+(result.status=="ok" and 600 or 30)}
+    return value
+end
+
+-- Only the originating Steam app and scroll offset; never merchant/payment data.
+local merchant_context = nil
+---@ffi
+---@param appid string
+---@param scroll number
+---@return boolean
+function setMerchantContext(appid,scroll)
+    if type(appid)~="string" or not appid:match("^%d+$") or #appid>10 or type(scroll)~="number" or scroll<0 or scroll>100000 then return false end
+    merchant_context={appid=appid,scroll=scroll,expires=os.time()+7200}
+    return true
+end
+---@ffi
+---@return string
+function getMerchantContext()
+    if merchant_context and merchant_context.expires>os.time() then return json.encode(merchant_context) end
+    return json.encode({})
 end

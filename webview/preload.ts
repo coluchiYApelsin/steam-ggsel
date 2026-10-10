@@ -1,4 +1,5 @@
-import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, type Offer } from './offers';
+import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, productOffer, type Offer } from './offers';
+import {openProduct,restoreSteamState,startMerchantShell} from './merchant';
 const WRAP = 'ggsel-offers';
 const STYLE = 'ggsel-offers-style';
 const appId = () => location.hostname === 'store.steampowered.com' ? location.pathname.match(/^\/app\/(\d+)(?:\/|$)/)?.[1] ?? null : null;
@@ -29,7 +30,7 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     document.head.append(el);
   }
   function row(o: Offer) {
-    const r = create('div', 'ggsel-row'), info = create('div', 'ggsel-info');
+    const r = create('div', 'ggsel-row'), info = create('div', 'ggsel-info');r.dataset.offerId=o.id;
     info.append(create('div', 'ggsel-title', o.title));
     info.append(create('div', 'ggsel-meta', [o.kind, o.seller,
       o.sellerRating === undefined ? 'Рейтинг продавца не указан' : `Продавец ★ ${o.sellerRating.toFixed(1)}/5`,
@@ -38,7 +39,9 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     const actions = create('div', 'ggsel-actions');
     actions.append(create('span', 'ggsel-price', `${o.priceFrom ? 'от ' : ''}${o.price.toLocaleString('ru-RU')} ₽`));
     const a = create('a', 'ggsel-buy', 'На GGSEL') as HTMLAnchorElement;
-    a.href = o.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.href = o.url; a.target = '_self'; a.rel = 'noopener noreferrer';
+    a.title='Открыть настоящий товар стороннего продавца GGSEL в текущем окне';
+    a.onclick=(event)=>{event.preventDefault();const id=appId();if(id)void openProduct(o.url,id).catch(()=>{a.title='Не удалось открыть товар';});};
     actions.append(a); r.append(info, actions); return r;
   }
   function paint() {
@@ -61,12 +64,13 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
         if (offers.length > 5) { const d = create('details'); d.append(create('summary','',`Ещё предложений: ${offers.length-5}`)); offers.slice(5).forEach(o => d.append(row(o))); root.append(d); }
         if (loaded.fetchedAt) root.append(create('small','',`Данные GGSEL: ${new Date(loaded.fetchedAt*1000).toLocaleTimeString('ru-RU')}. Цена может зависеть от варианта заказа.`));
       } else {
-        const messages: Record<string,string> = { loading: 'Загрузка предложений…', unsupported_game: 'Для этой игры пока нет проверенной привязки к каталогу GGSEL.', network_error: 'GGSEL недоступен. Повторите позже.', http_error: 'GGSEL отклонил запрос. Доступ не обходится.', rate_limited: 'Слишком частые запросы. Повторите через несколько секунд.', backend_unavailable: 'Не удалось получить ответ от плагина.', invalid_response: 'GGSEL вернул неподдерживаемый ответ.', catalog_schema_changed: 'Структура каталога GGSEL изменилась. Цены скрыты до проверки.' };
+        const messages: Record<string,string> = { loading: 'Загрузка и проверка предложений…', unsupported_game: 'Для этой игры пока нет проверенной привязки к каталогу GGSEL.', network_error: 'GGSEL недоступен. Повторите позже.', http_error: 'GGSEL отклонил запрос. Доступ не обходится.', rate_limited: 'Слишком частые запросы. Повторите через несколько секунд.', backend_unavailable: 'Не удалось получить ответ от плагина.', invalid_response: 'GGSEL вернул неподдерживаемый ответ.', unexpected_content_type:'GGSEL вернул ответ другого типа. Цены не показаны.', access_blocked:'GGSEL запросил проверку доступа. Защита не обходится.', catalog_mismatch:'Полученный каталог не соответствует названию игры. Цены не показаны.', unrecognized_catalog_response:'Не удалось распознать ответ каталога GGSEL. Цены не показаны.', oversized_catalog:'Ответ GGSEL превышает допустимый размер.', product_verification_failed:'Не удалось подтвердить данные страниц товаров. Повторите позже.' };
         const message = loaded.status === 'ok' ? (edition ? 'Подходящих предложений для этого издания нет.' : 'Точное соответствие этого DLC, набора или издания не подтверждено.') : messages[loaded.status] ?? 'Источник предложений недоступен.';
         const status = create('div', 'ggsel-meta', message); status.setAttribute('role','status'); root.append(status);
         if (loaded.status !== 'loading' && loaded.status !== 'unsupported_game') { const retry = create('button','','Повторить') as HTMLButtonElement; retry.type='button'; retry.onclick=()=>{current='';refresh();}; root.append(retry); }
       }
     }
+    if(loaded.status==='ok'&&document.querySelector('.ggsel-row'))restoreSteamState(appId()!);
   }
   async function load(id: string, request: number) {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -84,11 +88,22 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
         const inspected=products.map(p=>inspectOffer(p,data.catalog_title));
         const reasons:Record<string,number>={};inspected.forEach(x=>{reasons[x.reason]=(reasons[x.reason]??0)+1;});
         console.info('[Steam × GGSEL] catalog',JSON.stringify({appid:id,title:requestTitle,products:products.length,reasons}));
-        loaded = { status:'ok', gameTitle:requestTitle, fetchedAt:data.fetched_at, offers: inspected.map(x=>x.offer).filter((o): o is Offer=>o!==null) };
+        const offers=inspected.map(x=>x.offer).filter((o):o is Offer=>o!==null);
+        const candidates=products.filter((_,i)=>inspected[i]?.reason==='product_details_required').slice(0,8);
+        let detailFailures=0;
+        // At most eight public product pages; do not accept incomplete catalog cards.
+        for(const candidate of candidates){
+          if(stopped||request!==generation||appId()!==id)return;
+          try{const rawDetail=await backend.getGgselProduct(String(candidate.id_goods),candidate.url);const detail=typeof rawDetail==='string'?JSON.parse(rawDetail):rawDetail;
+            if(detail?.status==='ok'&&typeof detail.html==='string'){const offer=productOffer(detail.html,candidate,requestTitle);if(offer)offers.push(offer);}else detailFailures++;
+          }catch{detailFailures++;}
+        }
+        if(stopped||request!==generation||appId()!==id)return;
+        loaded = { status:!offers.length&&candidates.length&&detailFailures ? 'product_verification_failed' : 'ok', gameTitle:requestTitle, fetchedAt:data.fetched_at, offers };
       }
     } catch (e) {
       if (stopped || request !== generation || appId() !== id) return;
-      loaded = { status:e instanceof Error && ['catalog_schema_changed','invalid_response'].includes(e.message) ? e.message : 'backend_unavailable', offers:[] };
+      loaded = { status:e instanceof Error && ['access_blocked','catalog_mismatch','unrecognized_catalog_response','oversized_catalog','invalid_response'].includes(e.message) ? e.message : 'backend_unavailable', offers:[] };
       console.warn('[Steam × GGSEL]', e instanceof Error ? e.message : 'RPC failed');
     } finally { clearTimeout(timer); }
     paint();
@@ -108,6 +123,7 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
   return ()=>{stopped=true;++generation;observer.disconnect();clearInterval(interval);window.removeEventListener('popstate',schedule);document.querySelectorAll(`.${WRAP}`).forEach(el=>el.remove());};
 }
 export default function main() {
+  if(location.hostname==='ggsel.net'){void startMerchantShell();return;}
   if(location.hostname!=='store.steampowered.com')return;
   const w=window as Window & {__steamGgselCleanup?:()=>void};
   w.__steamGgselCleanup?.(); w.__steamGgselCleanup=startWidget();

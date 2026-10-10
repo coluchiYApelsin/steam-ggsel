@@ -37,3 +37,33 @@ test('Lua provider bounds requests, caches results and never disables TLS or fol
  const error=code===lua.LUA_OK?'':require('fengari').to_jsstring(lua.lua_tostring(L,-1));
  lua.lua_close(L);expect(error).toBe('');
 });
+
+test('native product provider validates destinations, caches requests, limits traffic and stores no merchant credentials',()=>{
+ const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);
+ const source=readFileSync(new URL('../backend/rpc_functions.lua',import.meta.url),'utf8');
+ const script=`
+ local now=100;os.time=function()return now end
+ local calls=0;local mime='text/html; charset=utf-8'
+ package.preload.json=function()return {encode=function(t)_G.result=t;return t.status or 'context' end}end
+ package.preload.http=function()return {get=function(url,opts)
+  calls=calls+1;assert(url:match('^https://ggsel.net/en/catalog/'));assert(opts.verify_ssl and not opts.follow_redirects)
+  return {status=200,body='<html>public</html>',headers={['Content-Type']=mime}}
+ end}end
+ ${source}
+ assert(getGgselProduct('1','https://evil.test/1')=='invalid_request' and calls==0)
+ assert(getGgselProduct('1','game-2')=='invalid_request' and calls==0)
+ assert(getGgselProduct('1','game-1')=='ok' and calls==1)
+ assert(getGgselProduct('1','game-1')=='ok' and calls==1)
+ for n=2,12 do assert(getGgselProduct(tostring(n),'game-'..n)=='ok') end
+ assert(getGgselProduct('13','game-13')=='rate_limited' and calls==12)
+ now=161;mime='application/json'
+ assert(getGgselProduct('13','game-13')=='unexpected_content_type')
+ assert(getGgselOffers('2677660','Indiana Jones and the Great Circle')=='unexpected_content_type')
+ assert(setMerchantContext('../evil',0)==false)
+ assert(setMerchantContext('1091500',-1)==false)
+ assert(setMerchantContext('1091500',1000)==true)
+ getMerchantContext();assert(result.appid=='1091500' and result.scroll==1000)
+ now=8000;getMerchantContext();assert(result.appid==nil)
+ `;
+ const code=lauxlib.luaL_dostring(L,to_luastring(script));const error=code===lua.LUA_OK?'':require('fengari').to_jsstring(lua.lua_tostring(L,-1));lua.lua_close(L);expect(error).toBe('');
+});
