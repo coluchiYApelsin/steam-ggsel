@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 — 2026-10-10
+
+- Replace original-site navigation with a full native product page in the current Steam Store DOM. Keep the Steam origin, game nodes and scroll state; no new browsing context while viewing offers.
+- Show independently verified live product image, full description, price, seller rating/review counts, edition, activation and region. Resolve long React Flight UTF-8 text records without evaluating scripts.
+- Verify seller IDs across localized aliases; require matching product ID/title/category/platform/edition/type. Hide price and checkout on failed verification.
+- Remove the old merchant browser shell, CSS hook and context RPC. Only the clearly labelled checkout action opens the real product URL externally; payment logic remains on GGSEL.
+- Validate actual native pages in Steam and preserve the existing purchase-block offers. See docs/VALIDATION-0.7.0.md.
+
 ## 0.6.0 — 2026-10-10
 
 - Open real GGSEL products in the main Steam Store WebView; add Back/Close and restore game scroll and expanded offers.

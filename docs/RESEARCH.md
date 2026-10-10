@@ -35,7 +35,11 @@ Reduced public listing fixtures exist only under tests/fixtures. They are never 
 Live Russian Steam diagnostics identified an empty purchase heading: current markup uses `h2`, whereas the old selector looked for `h1`. The game title and AppID were correct, and real GGSEL catalog data reached the widget. The base purchase carries package 367653; the full-edition block carries bundle 32470. Recognition now supports current headings, treats zero bundle IDs as absent, and accepts only the reviewed bundle with the exact expected game and edition title.
 
 Steam's [Ultimate Edition bundle 32470](https://store.steampowered.com/bundle/32470/?l=english) contains Cyberpunk 2077 and Phantom Liberty. This specific bundle maps to GGSEL Ultimate, including the Russian Steam title «Полное издание»; arbitrary bundles are still rejected. Live visual verification now passed with four Standard and one Ultimate offer. See VALIDATION-0.5.1.md for prices, rejection counts and artifact hash.
-# 0.6.0 research supplement
+# 0.7.0: native in-page product view
+
+The 0.6.0 original-site navigation did not satisfy the user's requirement and is superseded. GGSEL's actual CSP blocks Steam iframe embedding. The examined Millennium Lua/WebKit APIs provide hooks into existing documents, not a supported embedded WebView component in a Store page. Variant B therefore renders a full page in the current Steam DOM, retaining the Steam origin and original game nodes. No CSP/same-origin restrictions are bypassed. Merchant CSS hooks and external-page injection were removed. Only explicitly labelled checkout opens the exact original product URL. See VALIDATION-0.7.0.md for current evidence.
+
+# 0.6.0 research supplement (historical)
 
 GGSEL CSP frame-ancestors prevents embedding in a Steam iframe. Top-level navigation in the existing Store WebView was verified instead. Native Millennium implements foreign-domain injection via registered hooks; the real Lua add_browser_css API is used and its path resolves under Millennium/themes. The framework manages its own isolated world/CSP behavior; this plugin does not implement an iframe bypass or alter merchant response headers.
 
