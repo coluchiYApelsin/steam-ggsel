@@ -3,3 +3,6 @@ dist/
 diagnostics/
 .tools/
 *.log
+.millennium/
+.luarc.json
+.millennium/lsp/

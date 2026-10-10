@@ -1,0 +1,9 @@
+﻿Steam GGSEL 0.5.0 — Windows build
+
+Prerequisites: Bun, Node >=16, Microsoft Visual C++ Redistributable x64.
+Runtime: https://aka.ms/vs/17/release/vc_redist.x64.exe
+
+Run BUILD.cmd from the project directory.
+Output: dist/steam-ggsel.star (verified by Starlight).
+Run INSTALL.ps1 to copy it to Millennium; enable Steam GGSEL Prices.
+See README.md and KNOWN_ISSUES.md before treating this as fully verified.
