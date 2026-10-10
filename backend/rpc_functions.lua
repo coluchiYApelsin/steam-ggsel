@@ -98,4 +98,3 @@ function getGgselProduct(id, slug)
     product_cache[id]={slug=slug,value=value,expires=now+(result.status=="ok" and 600 or 30)}
     return value
 end
-
