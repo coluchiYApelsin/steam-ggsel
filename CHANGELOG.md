@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.2 — 2026-10-11
+
+- Parse length-framed UTF-8 Flight text without losing subsequent catalog records or interpreting text as JSON.
+- Verify four live catalogs with reviewed AppID/title bindings, including localized UNCHARTED and God of War Ragnarök labels. Preserve access errors and strict platform/game/edition checks.
+- Accept nullable base-edition metadata only with independently verified Standard Steam goods; recognize the reviewed Ragnarök spelling and regional “Without RU” wording.
+- Verify four native Steam cards, fresh prices and separate official merchant windows. Confirm R.E.P.O. region preselection; stop transferring all checkboxes after the real Hollow Knight page ignored its agreement.
+- Explain the product-page fallback and re-entry requirements. Never create orders or infer payment from window closure.
+- Pass 57 tests / 303 expectations, typecheck and Starlight section verification. See docs/END-TO-END-VALIDATION.md for evidence and publication limitations.
+
 ## 0.8.1 — 2026-10-11
 
 - Harden checkout handoff with a confirmed selection summary, changed-schema rejection, expired/detached-link protection and an explicitly unknown payment status.

@@ -1,0 +1,538 @@
+{
+  "fixture": "Public read-only GGSEL snapshot, 2026-10-11; tests only, never runtime prices",
+  "title": "R.E.P.O.",
+  "appid": "3241660",
+  "catalog": "repo",
+  "offer": {
+    "id": "5255891",
+    "title": "R.E.P.O. RU Steam PC Gift AUTO DELIVERY",
+    "edition": "standard",
+    "kind": "Steam Gift",
+    "price": 298,
+    "priceFrom": true,
+    "seller": "SjMarket",
+    "sellerId": "1095270",
+    "sellerRating": 4.9,
+    "region": "Цена для региона: Russia",
+    "conditions": [
+      "The region of your account · Russia · Kazakhstan · Belarus · Ukraine · Turkey · CIS (Regions in the description) · Argentina · China · USA · Europe (EUR) · India · Poland · Indonesia · Vietnam · Philippines · Pakistan · Chile · Taiwan · Thailand · Brazil · South Africa · Malaysia · Saudi Arabia · Mexico · Qatar · Peru · Uruguay · UAE · Hong Kong · Singapore · Colombia · Japan · South Korea · New Zealand · Canada · Norway · Australia · United Kingdom · Switzerland · Israel",
+      "Your STEAM account link",
+      "$5b"
+    ],
+    "url": "https://ggsel.net/en/catalog/product/r-e-p-o-rossiia-ru-steam-gift-stim-gift-pk-avtodostavka-podarok-5255891"
+  },
+  "detail": {
+    "id_goods": 5255891,
+    "name": "R.E.P.O. RU Steam PC Gift AUTO DELIVERY",
+    "baseCategory_name": "R.E.P.O.",
+    "category": {
+      "url": "repo-keys-steam",
+      "content_type_id": 48,
+      "content_type_name": "keys",
+      "type": "All Games",
+      "title": "Buy R.E.P.O. Key for Steam",
+      "breadcrumbs_title": "Steam",
+      "max_cnt_sell": null,
+      "discount": 0,
+      "forbidden_type": 0,
+      "edition": null,
+      "platform": "Steam",
+      "parent": {
+        "url": "repo-keys",
+        "title": "{section} {sub_section}",
+        "breadcrumbs_title": "The keys",
+        "parent": {
+          "url": "repo",
+          "title": "Buy R.E.P.O.",
+          "breadcrumbs_title": "R.E.P.O.",
+          "parent": {
+            "url": "igry-po-nazvaniyu",
+            "title": "Buy games cheap and with guarantee",
+            "breadcrumbs_title": "Games",
+            "parent": null
+          }
+        }
+      },
+      "is_russian_ip": false
+    },
+    "seller": {
+      "id_seller": 1095270,
+      "name_seller": "SjMarket",
+      "statistics": {
+        "rating": 4.9,
+        "count_sell": 231283,
+        "count_goods": 10614,
+        "count_bad_responses": 184,
+        "count_good_responses": 7280
+      }
+    },
+    "options": [
+      {
+        "id": 6707111,
+        "name": "option_radio_6707111",
+        "label": "The region of your account",
+        "type": "radio",
+        "required": 1,
+        "modifier_visible": 0,
+        "variants": [
+          {
+            "value": 46974122,
+            "text": "Russia",
+            "default": true,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974123,
+            "text": "Kazakhstan",
+            "default": false,
+            "modify": "+81.0 RUB",
+            "modify_value": "81.0",
+            "modify_value_default": "0.95",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974124,
+            "text": "Belarus",
+            "default": false,
+            "modify": "+81.0 RUB",
+            "modify_value": "81.0",
+            "modify_value_default": "0.95",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974125,
+            "text": "Ukraine",
+            "default": false,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974126,
+            "text": "Turkey",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974127,
+            "text": "CIS (Regions in the description)",
+            "default": false,
+            "modify": "+31.0 RUB",
+            "modify_value": "31.0",
+            "modify_value_default": "0.37",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974128,
+            "text": "Argentina",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974129,
+            "text": "China",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974130,
+            "text": "USA",
+            "default": false,
+            "modify": "+421.0 RUB",
+            "modify_value": "421.0",
+            "modify_value_default": "4.96",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974131,
+            "text": "Europe (EUR)",
+            "default": false,
+            "modify": "+491.0 RUB",
+            "modify_value": "491.0",
+            "modify_value_default": "5.78",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974132,
+            "text": "India",
+            "default": false,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974133,
+            "text": "Poland",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974135,
+            "text": "Indonesia",
+            "default": false,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974134,
+            "text": "Vietnam",
+            "default": false,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974136,
+            "text": "Philippines",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974137,
+            "text": "Pakistan",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974139,
+            "text": "Chile",
+            "default": false,
+            "modify": "+11.0 RUB",
+            "modify_value": "11.0",
+            "modify_value_default": "0.13",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974138,
+            "text": "Taiwan",
+            "default": false,
+            "modify": "+31.0 RUB",
+            "modify_value": "31.0",
+            "modify_value_default": "0.37",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974141,
+            "text": "Thailand",
+            "default": false,
+            "modify": "+61.0 RUB",
+            "modify_value": "61.0",
+            "modify_value_default": "0.72",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974140,
+            "text": "Brazil",
+            "default": false,
+            "modify": "+71.0 RUB",
+            "modify_value": "71.0",
+            "modify_value_default": "0.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974143,
+            "text": "South Africa",
+            "default": false,
+            "modify": "+71.0 RUB",
+            "modify_value": "71.0",
+            "modify_value_default": "0.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974142,
+            "text": "Malaysia",
+            "default": false,
+            "modify": "+81.0 RUB",
+            "modify_value": "81.0",
+            "modify_value_default": "0.95",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974144,
+            "text": "Saudi Arabia",
+            "default": false,
+            "modify": "+81.0 RUB",
+            "modify_value": "81.0",
+            "modify_value_default": "0.95",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974146,
+            "text": "Mexico",
+            "default": false,
+            "modify": "+81.0 RUB",
+            "modify_value": "81.0",
+            "modify_value_default": "0.95",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974145,
+            "text": "Qatar",
+            "default": false,
+            "modify": "+121.0 RUB",
+            "modify_value": "121.0",
+            "modify_value_default": "1.43",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974147,
+            "text": "Peru",
+            "default": false,
+            "modify": "+121.0 RUB",
+            "modify_value": "121.0",
+            "modify_value_default": "1.43",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974148,
+            "text": "Uruguay",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974149,
+            "text": "UAE",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974150,
+            "text": "Hong Kong",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974151,
+            "text": "Singapore",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974153,
+            "text": "Colombia",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974152,
+            "text": "Japan",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974154,
+            "text": "South Korea",
+            "default": false,
+            "modify": "+241.0 RUB",
+            "modify_value": "241.0",
+            "modify_value_default": "2.84",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974155,
+            "text": "New Zealand",
+            "default": false,
+            "modify": "+261.0 RUB",
+            "modify_value": "261.0",
+            "modify_value_default": "3.07",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974156,
+            "text": "Canada",
+            "default": false,
+            "modify": "+321.0 RUB",
+            "modify_value": "321.0",
+            "modify_value_default": "3.78",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974157,
+            "text": "Norway",
+            "default": false,
+            "modify": "+421.0 RUB",
+            "modify_value": "421.0",
+            "modify_value_default": "4.96",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974158,
+            "text": "Australia",
+            "default": false,
+            "modify": "+491.0 RUB",
+            "modify_value": "491.0",
+            "modify_value_default": "5.78",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974159,
+            "text": "United Kingdom",
+            "default": false,
+            "modify": "+491.0 RUB",
+            "modify_value": "491.0",
+            "modify_value_default": "5.78",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974160,
+            "text": "Switzerland",
+            "default": false,
+            "modify": "+491.0 RUB",
+            "modify_value": "491.0",
+            "modify_value_default": "5.78",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          },
+          {
+            "value": 46974162,
+            "text": "Israel",
+            "default": false,
+            "modify": "+561.0 RUB",
+            "modify_value": "561.0",
+            "modify_value_default": "6.61",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          }
+        ]
+      },
+      {
+        "id": 4478930,
+        "name": "option_text_4478930",
+        "label": "Your STEAM account link",
+        "type": "text",
+        "required": 1,
+        "modifier_visible": 1,
+        "variants": []
+      }
+    ],
+    "prices_unit": null,
+    "price_wmr": 298,
+    "is_active": true,
+    "cnt_goodresponses": 24,
+    "images": "https://img.ggsel.net/5255891/original/250x250/2c3afd0a5b5d6c0df5ecb2f5e4325707.webp",
+    "info": "<p>✅Automatic gift sending on STEAM\n<br />    ✅R.E.P.O. this product is sent as a gift to STEAM!\n<br />    ✅To pay without fees, select \"Card\" or \"Fast payment system\" (it is selected by default)\n<br />    ✅ You receive this product on your own account\n<br />    ✅If you don't have a STEAM account, then you can buy here --> <span>https://ggsel.net/catalog/product/3445182</span>\n<br />    🟡 After purchase:\n<br />• Select the region of your account to check here <span>https://store.steampowered.com/account.</span>\n<br />• Provide a quick friend invite link for STEAM (the link domain is s.team).\n<br />• You can get the invite link at <span>https://steamcommunity.com/my/friends/add</span>\n<br />• Start the payment by clicking the \"Buy\" button\n<br />• After payment, you will be redirected to the website where the gift will be sent\n<br />• While sending, wait for the bot to send you a STEAM friend invitation.</p>\n\n<p>If you choose a CIS region, then you must have the account currency of $ and one of the following regions: Armenia, Azerbaijan, Georgia, Kyrgyzstan, Republic of Moldova, Tajikistan, Turkmenistan, Uzbekistan (When choosing a CIS region, you cannot send to the Russian Federation or RB or Kazakhstan! They have a separate region)\n<br />Russia and Kazakhstan are not part of the CIS region!</p>\n\n<p>🎮 Also our products\n<br />R.E.P.O. <span>https://ggsel.net/catalog/product/5255891</span></p>\n\n<p>If you change your mind about buying the product or your account does not match what you specified in the 'Account Region', the refund fee will be 25%</p>",
+    "add_info": ""
+  }
+}

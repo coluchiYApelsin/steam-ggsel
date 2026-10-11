@@ -1,6 +1,6 @@
 import { catalogProducts, matchPurchaseBlock, normalize, inspectOffer, productOffer, type Offer } from './offers';
 import {openProductPage} from './product-page';
-import {discoverCatalog} from './catalog';
+import {discoverCatalog,reviewedCatalogFor} from './catalog';
 import {diagnosticSuffix} from './diagnostics';
 import {decodeQuote,defaultSelection,priceSelection,productOptions} from './options';
 import {productRecord} from './offers';
@@ -81,7 +81,8 @@ export function startWidget(fetchOffers: (id: string, title: string) => Promise<
     const requestTitle = title();
     try {
       const retrying=forceRefresh;forceRefresh=false;
-      const initial=retrying ? backend.getGgselCatalog(id,requestTitle,'',true) : fetchOffers(id,requestTitle);
+      const reviewed=reviewedCatalogFor(id,requestTitle);
+      const initial=reviewed ? backend.getGgselCatalog(id,requestTitle,reviewed.slug,retrying) : retrying ? backend.getGgselCatalog(id,requestTitle,'',true) : fetchOffers(id,requestTitle);
       const raw = await Promise.race([initial, new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('rpc_timeout')),20000);})]);
       const data = await discoverCatalog(id,requestTitle,raw,retrying);
       if (!data || typeof data !== 'object') throw new Error('invalid_response');

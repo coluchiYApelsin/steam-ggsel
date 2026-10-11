@@ -1,0 +1,81 @@
+{
+  "fixture": "Public read-only GGSEL snapshot, 2026-10-11; tests only, never runtime prices",
+  "title": "God of War Ragnarok",
+  "appid": "2322010",
+  "catalog": "god-of-war-ragnarok",
+  "offer": {
+    "id": "102484597",
+    "title": "God of War Ragnarök Steam Key CIS(Without RU)",
+    "edition": "standard",
+    "kind": "Steam-ключ",
+    "price": 2717,
+    "priceFrom": false,
+    "seller": "Happy Games",
+    "sellerId": "119355245",
+    "sellerRating": 4.9,
+    "region": "Регион по описанию продавца: CIS+Ukraine(Without RU)",
+    "conditions": [
+      "🚀 Automatic and instant delivery 24/7\n\n\n🏷️ Name: God of War Ragnarök\n\n📜 Language: as specified on Steam\n\n⚙️ Activation: Steam\n\n🔑 Product type: Key activation\n\n🌎 Region: CIS+Ukraine(Without RU)\n\n\n🔰 Kratos and Atreus embark on a mythic journey for answers before Ragnarök arrives – now on PC.\n\n\n🎮 How to activate the key:\n\n1️⃣ Download and install Steam.\n\n2️⃣ Log in to your Steam account.\n\n3️⃣ Go to the \"My Games\" section and select \"Activate via Steam\".\n\n4️⃣ Enter the key.\n\n5️⃣ After activation, the game will appear in the library."
+    ],
+    "url": "https://ggsel.net/en/catalog/product/god-of-war-ragnar-k-steam-kliuc-sng-bez-rf-102484597"
+  },
+  "detail": {
+    "id_goods": 102484597,
+    "name": "God of War Ragnarök Steam Key CIS(Without RU)",
+    "baseCategory_name": "God of War Ragnarok",
+    "category": {
+      "url": "god-of-war-ragnarok-steam-keys",
+      "content_type_id": 2,
+      "content_type_name": "keys",
+      "type": "All Games",
+      "title": "Buy God of War Ragnarok Standart Edition Key for Steam ",
+      "breadcrumbs_title": "Standard Edition",
+      "max_cnt_sell": null,
+      "discount": 2788,
+      "forbidden_type": 0,
+      "edition": "Standard Edition",
+      "platform": "Steam",
+      "parent": {
+        "url": "god-of-war-ragnarok-keys-and-gifts-steam",
+        "title": "{section} {platform} {sub_section}",
+        "breadcrumbs_title": "Steam",
+        "parent": {
+          "url": "god-of-war-ragnarok-keys",
+          "title": "God of War Ragnarök CD Keys",
+          "breadcrumbs_title": "Keys",
+          "parent": {
+            "url": "god-of-war-ragnarok",
+            "title": "God of War Ragnarok",
+            "breadcrumbs_title": "God of War Ragnarok",
+            "parent": {
+              "url": "igry-po-nazvaniyu",
+              "title": "Buy games cheap and with guarantee",
+              "breadcrumbs_title": "Games",
+              "parent": null
+            }
+          }
+        }
+      },
+      "is_russian_ip": false
+    },
+    "seller": {
+      "id_seller": 119355245,
+      "name_seller": "Happy Games",
+      "statistics": {
+        "rating": 4.9,
+        "count_sell": 246907,
+        "count_goods": 2720,
+        "count_bad_responses": 118,
+        "count_good_responses": 10108
+      }
+    },
+    "options": [],
+    "prices_unit": null,
+    "price_wmr": 2717,
+    "is_active": true,
+    "cnt_goodresponses": 21,
+    "images": "https://img.ggsel.net/102484597/original/250x250/2484596-2407281-5aba9627981f5091c7fb34900ed0cf75.webp",
+    "info": "<p>🚀 Automatic and instant delivery 24/7</p>\n\n<p>🏷️ Name: God of War Ragnarök\n<br />📜 Language: as specified on Steam\n<br />⚙️ Activation: Steam\n<br />🔑 Product type: Key activation\n<br />🌎 Region: CIS+Ukraine(Without RU)</p>\n\n<p>🔰 Kratos and Atreus embark on a mythic journey for answers before Ragnarök arrives – now on PC.</p>\n\n<p>🎮 How to activate the key:\n<br />1️⃣ Download and install Steam.\n<br />2️⃣ Log in to your Steam account.\n<br />3️⃣ Go to the \"My Games\" section and select \"Activate via Steam\".\n<br />4️⃣ Enter the key.\n<br />5️⃣ After activation, the game will appear in the library.</p>",
+    "add_info": ""
+  }
+}

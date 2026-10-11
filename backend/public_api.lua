@@ -4,7 +4,7 @@ local window,count=0,0
 local function request(path,payload)
  local now=os.time();if now-window>=60 then window=now;count=0 end
  if count>=60 then return json.encode({status='rate_limited'}) end;count=count+1
- local opts={timeout=12,follow_redirects=false,verify_ssl=true,user_agent='Steam-GGSEL/0.8.1',headers={Accept='application/json'}}
+ local opts={timeout=12,follow_redirects=false,verify_ssl=true,user_agent='Steam-GGSEL/0.8.2',headers={Accept='application/json'}}
  local ok,r
  if payload then opts.headers['Content-Type']='application/json';ok,r=pcall(http.post,'https://api.ggsel.com'..path,json.encode(payload),opts)
  else ok,r=pcall(http.get,'https://api.ggsel.com'..path,opts) end

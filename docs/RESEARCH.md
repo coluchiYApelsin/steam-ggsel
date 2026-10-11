@@ -1,5 +1,9 @@
 # Investigation — 2026-10-10
 
+Current 0.8.2 evidence (2026-10-11): [END-TO-END-VALIDATION.md](END-TO-END-VALIDATION.md). Four real Steam AppIDs/catalogs, native cards, live quotes and separate merchant windows were checked; no orders/payment submissions were made. UTF-8 length-framed Flight parsing and localized reviewed AppID bindings were corrected. R.E.P.O. region preselection was visually confirmed; Hollow Knight checkbox preselection failed, so all checkboxes now require merchant re-entry. Historical notes below do not override this report.
+
+S.T.A.L.K.E.R. 2 follow-up: a fresh public web search on 2026-10-11 again found a [genre catalog](https://ggsel.net/catalog/shooters-newyear) and unrelated/DLC pages, not an independently verified root game category. Search snippets are not category proof and were not used to loosen matching. The previous access failure was not bypassed.
+
 Current checkout/API research (2026-10-11): [CHECKOUT-RESEARCH.md](CHECKOUT-RESEARCH.md). Actual 0.8.1 Steam validation: [VALIDATION-0.8.1.md](VALIDATION-0.8.1.md). The historical checkout limitations below are superseded only where the new report explicitly confirms behavior.
 
 ## Windows exit 53

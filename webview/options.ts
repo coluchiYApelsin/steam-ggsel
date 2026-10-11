@@ -36,7 +36,7 @@ export function selectionProductUrl(url:string,options:ProductOption[],selection
  if(!isProductUrl(url))throw new Error('invalid_product_context');
  const invalid=validateSelection(options,selection);if(invalid)throw new Error(invalid);
  const u=new URL(url);const parts:string[]=[];let complete=true;
- for(const o of options){const values=selection[o.id]??[];if(!values.length){if(o.variants.some(v=>v.default))complete=false;continue;}if(!o.variants.length||values.length!==1){complete=false;continue;}parts.push(`${o.name}_${values[0]}`);}
+ for(const o of options){const values=selection[o.id]??[];if(o.type==='checkbox'){if(values.length||o.variants.some(v=>v.default))complete=false;continue;}if(!values.length){if(o.variants.some(v=>v.default))complete=false;continue;}if(!o.variants.length||values.length!==1){complete=false;continue;}parts.push(`${o.name}_${values[0]}`);}
  if(parts.length)u.searchParams.set('option',parts.join('_'));
  return {url:u.href,complete};
 }

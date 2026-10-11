@@ -37,7 +37,7 @@ local function catalog_request(appid, title, catalog, refresh)
     last_request = now
     local ok, response = pcall(http.get, "https://ggsel.net/en/catalog/" .. slug, {
         timeout = 15, follow_redirects = false, verify_ssl = true,
-        user_agent = "Steam-GGSEL/0.8.1 (public catalog comparison)",
+        user_agent = "Steam-GGSEL/0.8.2 (public catalog comparison)",
         headers = { ["Accept"] = "text/html" },
     })
     local result
@@ -80,7 +80,7 @@ local function product_request(id, slug, refresh)
     if product_count>=30 then return json.encode({status="rate_limited"}) end
     product_count=product_count+1
     local ok,r=pcall(http.get,"https://ggsel.net/en/catalog/product/"..slug,{
-        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.8.1 (public product verification)",headers={Accept="text/html"}})
+        timeout=12,follow_redirects=false,verify_ssl=true,user_agent="Steam-GGSEL/0.8.2 (public product verification)",headers={Accept="text/html"}})
     local result
     if not ok or not r then result={status="network_error"}
     elseif r.status~=200 then result={status="http_error",http_status=r.status}

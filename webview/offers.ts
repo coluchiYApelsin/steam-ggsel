@@ -6,6 +6,9 @@ export type Offer = {
 };
 export const normalize = (s: string) => s.replace(/[™®©]/g, '').normalize('NFKC').toLowerCase().replace(/\b(?:[a-z]\.){2,}/g,v=>v.replace(/\./g,'')).replace(/[’']/g,'').replace(/&/g,' and ')
   .replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
+// This exact official game-name alias is reviewed; do not remove accents from
+// arbitrary titles or merge the 2018 God of War with its sequel.
+export const normalizeGameName=(s:string)=>normalize(s).replace(/^god of war ragnarök(?= |$)/,'god of war ragnarok');
 
 export function editionForHeading(heading: string, title: string): Edition | null {
   const h = normalize(heading).replace(/^(buy|купить|purchase) /, '');
@@ -52,10 +55,27 @@ export function flightRecords(html: string): unknown[] {
     if (!match) continue;
     try { const data = JSON.parse(match[1]!); if (data[0] === 1 && typeof data[1] === 'string') flight += data[1]; } catch { /* unrelated script */ }
   }
-  for (const line of flight.split('\n')) {
-    const i = line.indexOf(':');
-    if (i < 0) continue;
-    try { records.push(JSON.parse(line.slice(i + 1))); } catch { /* Flight references / text */ }
+  // Text rows are UTF-8 length framed, not newline framed. Their contents may
+  // contain newlines or apparent JSON rows; skip exactly their declared bytes.
+  const bytes=new TextEncoder().encode(flight),decoder=new TextDecoder('utf-8',{fatal:true});
+  let cursor=0;
+  while(cursor<bytes.length){
+    let colon=cursor;while(colon<bytes.length&&bytes[colon]!==58&&bytes[colon]!==10)colon++;
+    const id=decoder.decode(bytes.slice(cursor,colon));
+    if(bytes[colon]!==58||! /^[a-f0-9]*$/i.test(id))throw new Error('unrecognized_catalog_response');
+    let start=colon+1;
+    if(bytes[start]===84){
+      let comma=start+1;while(comma<bytes.length&&bytes[comma]!==44)comma++;
+      const hex=decoder.decode(bytes.slice(start+1,comma));
+      if(!/^[a-f0-9]+$/i.test(hex))throw new Error('unrecognized_catalog_response');
+      const length=parseInt(hex,16);cursor=comma+1+length;
+      if(cursor>bytes.length)throw new Error('unrecognized_catalog_response');
+      decoder.decode(bytes.slice(comma+1,cursor));
+    }else{
+      let end=start;while(end<bytes.length&&bytes[end]!==10)end++;
+      try{records.push(JSON.parse(decoder.decode(bytes.slice(start,end))));}catch{/* Non-JSON Flight module/reference rows. */}
+      cursor=end<bytes.length?end+1:end;
+    }
   }
   if (!records.length) throw new Error(/<title>[^<]*(captcha|access denied|verify|just a moment)/i.test(html) ? 'access_blocked' : 'unrecognized_catalog_response');
   return records;
@@ -68,7 +88,7 @@ export function catalogProducts(html: string, expectedTitle: string): Obj[] {
   function walk(v: unknown, depth = 0) {
     if (!v || typeof v !== 'object' || depth > 45) return;
     const o = v as Obj;
-    if (o.digi_catalog) {catalogFound=true;if(normalize(String(o.name)) === normalize(expectedTitle)) verifiedCatalog=true;}
+    if (o.digi_catalog) {catalogFound=true;if(normalizeGameName(String(o.name)) === normalizeGameName(expectedTitle)) verifiedCatalog=true;}
     if (Array.isArray(o.items) && o.items.length===0) emptyItems=true;
     if (Number.isSafeInteger(o.id_goods) && typeof o.name === 'string' && typeof o.url === 'string') {
       if ((o.seller || typeof o.seller_name==='string') && !products.has(String(o.id_goods))) products.set(String(o.id_goods), o);
@@ -84,7 +104,7 @@ export function catalogProducts(html: string, expectedTitle: string): Obj[] {
 export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reason:string} {
   const reject=(reason:string)=>({offer:null,reason});
   const title = typeof p.name === 'string' ? p.name : '';
-  const n = normalize(title), base = normalize(gameTitle);
+  const n = normalizeGameName(title), base = normalizeGameName(gameTitle);
   if (!n.startsWith(`${base} `)) return reject('different_game_title');
   if (!/\bsteam\b/i.test(title)) return reject('steam_platform_not_explicit');
   if (/\b(gog|xbox|ps4|ps5|epic|nintendo|rental|rent|offline|dlc|bundle|pack|upgrade)\b|аренд|оффлайн|смен[аы] регион|region chang/i.test(title)) return reject('other_platform_dlc_rental_or_bundle');
@@ -97,7 +117,7 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
   if (found.length > 1) return reject('ambiguous_edition');
   const edition: Edition = found[0] ?? 'standard';
   // Unknown extra tokens can indicate another game, DLC or edition: reject them.
-  rest = rest.replace(/\b(standard|deluxe|ultimate|complete|premium|edition|steam|key|gift|account|pc|auto|delivery|autodelivery|world|worldwide|global|except|ru|rb|by|ua|kz|cis|sng|tr|ar|ww)\b/g, '').trim();
+  rest = rest.replace(/\b(standard|deluxe|ultimate|complete|premium|edition|steam|key|gift|account|pc|auto|delivery|autodelivery|world|worldwide|global|except|without|ru|rb|by|ua|kz|cis|sng|tr|ar|ww)\b/g, '').trim();
   if (rest || /edition choice|edition selection/i.test(title)) return reject('unrecognized_title_tokens');
   const account = /\baccount\b|аккаунт/i.test(title);
   const key = /\bkey\b|ключ/i.test(title);
@@ -136,6 +156,15 @@ export function inspectOffer(p: Obj, gameTitle: string): {offer:Offer|null;reaso
 }
 export function toOffer(p:Obj,gameTitle:string):Offer|null{return inspectOffer(p,gameTitle).offer;}
 
+// A missing category edition is not a conflicting edition. Base-game identity must
+// still pass the complete title/token/URL checks and a corroborated Steam type.
+export function categoryEditionMatches(category:Obj,offer:Offer):boolean{
+ const edition=normalize(String(category.edition??'')).replace(/ edition$/,'');
+ if(edition)return edition===offer.edition;
+ return offer.edition==='standard'&&category.platform==='Steam'&&
+  ((offer.kind==='Steam-ключ'&&category.content_type_id===2)||(offer.kind==='Steam Gift'&&category.content_type_id===48)||(offer.kind==='Аккаунт'&&category.content_type_id===1));
+}
+
 export function productRecord(html:string,id:string):Obj|undefined{
  let detail:Obj|undefined;function walk(v:unknown,depth=0){if(!v||typeof v!=='object'||depth>45)return;const o=v as Obj;if(String(o.id_goods)===id&&o.category&&o.seller&&Array.isArray(o.options))detail=o;Object.values(o).forEach(x=>walk(x,depth+1));}flightRecords(html).forEach(x=>walk(x));return detail;
 }
@@ -168,14 +197,14 @@ export function productOffer(html:string, candidate:Obj, gameTitle:string):Offer
     if(String(o.id_goods)===String(candidate.id_goods)&&o.category&&o.seller&&Array.isArray(o.options)) detail=o;
     Object.values(o).forEach(x=>walk(x,depth+1));}
   flightRecords(html).forEach(x=>walk(x));
-  if(!detail || normalize(String(detail.baseCategory_name))!==normalize(gameTitle) || detail.category.platform!=='Steam') return null;
+  if(!detail || normalizeGameName(String(detail.baseCategory_name))!==normalizeGameName(gameTitle) || detail.category.platform!=='Steam') return null;
   const configurable=configurableOffer(detail,candidate,gameTitle);if(configurable)return configurable;
-  const edition=editionForHeading(`${gameTitle} ${detail.category.edition}`,gameTitle);
+  const edition=detail.category.edition==null?'standard':editionForHeading(`${gameTitle} ${detail.category.edition}`,gameTitle);
   if(!edition)return null;
   const text=String(detail.info??'').replace(/<br\s*\/?\s*>|<\/p>/gi,'\n').replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').trim();
   const region=text.match(/(?:region(?: of (?:use|activation))?|регион(?: активации)?)\s*:\s*([^\n]{2,160})/i)?.[1]?.trim();
   const p={...detail,url:candidate.url,forbidden_type:detail.category.forbidden_type,content_type_id:detail.category.content_type_id,
     seller:{...detail.seller,rating:detail.seller.statistics?.rating},verified_region:region,verified_description:text.slice(0,6000)};
   const offer=toOffer(p,gameTitle);
-  return offer?.edition===edition ? offer : null;
+  return offer?.edition===edition&&categoryEditionMatches(detail.category,offer) ? offer : null;
 }

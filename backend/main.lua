@@ -6,6 +6,6 @@ require("public_api")
 return {
     on_load = function()
         millennium.ready()
-        logger:info("Steam GGSEL 0.8.1 ready; native product page registered")
+        logger:info("Steam GGSEL 0.8.2 ready; native product page registered")
     end,
 }

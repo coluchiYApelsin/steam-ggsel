@@ -1,7 +1,7 @@
 {
   "name": "steam-ggsel-prices",
   "private": true,
-  "version": "0.8.1",
+  "version": "0.8.2",
   "scripts": {
     "build": "node scripts/build.cjs",
     "dev": "node node_modules/@steambrew/starlight/bin/starlight.js watch",

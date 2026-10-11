@@ -1,4 +1,4 @@
-import {flightRecords,normalize,toOffer,configurableOffer,variantEdition,type Offer} from './offers';
+import {flightRecords,normalize,normalizeGameName,toOffer,configurableOffer,variantEdition,categoryEditionMatches,type Offer} from './offers';
 import {isProductUrl} from './merchant';
 import {responseError,diagnosticSuffix} from './diagnostics';
 import {productOptions,defaultSelection,validateSelection,priceSelection,decodeQuote,selectionSummary,selectionProductUrl,type ProductOption,type Selection} from './options';
@@ -31,7 +31,7 @@ export function verifiedProduct(html:string,expected:Offer,gameTitle:string,fetc
  const walk=(v:unknown,depth=0)=>{if(!v||typeof v!=='object'||depth>45)return;const o=v as Obj;
   if(String(o.id_goods)===expected.id&&o.category&&o.seller&&Array.isArray(o.options))detail=o;
   Object.values(o).forEach(x=>walk(x,depth+1));};flightRecords(html).forEach(x=>walk(x));
- if(!detail||normalize(String(detail.baseCategory_name))!==normalize(gameTitle)||detail.category.platform!=='Steam'||normalize(String(detail.name))!==normalize(expected.sourceTitle??expected.title))throw new Error('identity_not_confirmed');
+ if(!detail||normalizeGameName(String(detail.baseCategory_name))!==normalizeGameName(gameTitle)||detail.category.platform!=='Steam'||normalize(String(detail.name))!==normalize(expected.sourceTitle??expected.title))throw new Error('identity_not_confirmed');
  if(detail.is_active===false)throw new Error('product_unavailable');
  const description=plain(resolveProductText(html,detail.info)),additional=plain(resolveProductText(html,detail.add_info));
  const region=description.match(/(?:region(?: of (?:use|activation))?|регион(?: активации)?)\s*:\s*([^\n]{2,160})/i)?.[1]?.trim();
@@ -39,8 +39,7 @@ export function verifiedProduct(html:string,expected:Offer,gameTitle:string,fetc
  const offer=expected.configurable?configurableOffer(detail,{id_goods:expected.id,url:slug},gameTitle):toOffer({...detail,url:slug,forbidden_type:detail.category.forbidden_type,content_type_id:detail.category.content_type_id,
   seller:{...detail.seller,rating:detail.seller.statistics?.rating},verified_region:region},gameTitle);
  if(!offer||offer.edition!==expected.edition||offer.kind!==expected.kind||(expected.sellerId?offer.sellerId!==expected.sellerId:normalize(offer.seller)!==normalize(expected.seller)))throw new Error('identity_not_confirmed');
- const edition=normalize(String(detail.category.edition??'')).replace(/ edition$/,'');
- if(!expected.configurable&&edition!==offer.edition && !(offer.kind==='Аккаунт'&&offer.edition==='standard'&&!edition&&detail.category.content_type_id===1))throw new Error('edition_not_confirmed');
+ if(!expected.configurable&&!categoryEditionMatches(detail.category,offer))throw new Error('edition_not_confirmed');
  const options=productOptions(detail.options);
  offer.conditions=detail.options.map((o:Obj)=>[o.label,o.required?'Обязательный выбор':'',...(Array.isArray(o.variants)?o.variants.map((v:Obj)=>[v.text,v.modify,v.disabled?'Недоступно':''].filter(Boolean).join(' · ')):[]),o.comment].filter(x=>typeof x==='string'&&x.trim()).join('\n')).filter(Boolean);
  let image:string|undefined;
@@ -103,7 +102,7 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
    const selectionInfo=el('p','gp-meta');buy.append(selectionInfo,amount,quoteStatus);
    if(o.kind==='Аккаунт')buy.append(el('p','gp-warning','Вы получаете другой Steam-аккаунт. Игра не добавляется в вашу существующую библиотеку Steam. Условия передачи и риски указаны продавцом ниже.'));
    if(o.conditions.length){const conditions=el('section','gp-panel');conditions.append(el('h2','','Регионы и условия вариантов'));o.conditions.forEach(c=>conditions.append(el('p','gp-meta',c)));left.append(conditions);}
-   const pay=el('button','gp-continue','Продолжить к оплате') as HTMLButtonElement;pay.type='button';pay.disabled=true;
+   const pay=el('button','gp-continue','Проверить и продолжить оформление') as HTMLButtonElement;pay.type='button';pay.disabled=true;
    const handoff=el('div','gp-handoff');
    buy.append(pay,handoff,el('p','gp-checkout-notice','До оплаты вы остаётесь в Steam. После повторной проверки откроется настоящая карточка GGSEL для оформления. Страна оплаты определяется площадкой и не является регионом аккаунта или активации. Авторизация и оплата — только на GGSEL.'));
    const seller=el('section','gp-panel');seller.append(el('h2','','Продавец'),el('div','gp-meta',o.seller),el('div','gp-meta',o.sellerRating===undefined?'Рейтинг продавца не указан':`Рейтинг продавца: ${o.sellerRating.toFixed(1)} / 5`),el('div','gp-meta',product.sellerReviews===undefined?'Количество отзывов продавца не указано':`Отзывы продавца: ${product.sellerReviews}`),el('div','gp-meta',product.positiveReviews===undefined?'Отзывы о товаре не предоставлены':`Положительные отзывы о товаре: ${product.positiveReviews}`));
@@ -137,7 +136,7 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
      if(!active||request!==quoteGeneration)return false;
      quote=confirmed;amount.textContent=`${confirmed.amount.toLocaleString('ru-RU')} ₽`;
      quoteStatus.textContent=`Цена подтверждена GGSEL: ${new Date(confirmed.fetchedAt*1000).toLocaleTimeString('ru-RU')}. Карточка активна, выбранные варианты не отмечены недоступными. Наличие без резервирования.`;
-     selectionInfo.textContent=selectionSummary(fresh.options,selection)+(variantLabel?`\nСостав: ${variantLabel} · ${selectedEdition==='dlc'?'DLC — требуется базовая игра':selectedEdition==='bundle'?'Набор':String(selectedEdition).toUpperCase()}`:'')+`\nТовар ${o.id}; варианты: ${JSON.stringify(priceSelection(fresh.options,selection))}`;
+     selectionInfo.textContent=selectionSummary(fresh.options,selection)+(variantLabel?`\nСостав: ${variantLabel} · ${selectedEdition==='dlc'?'DLC — требуется базовая игра':selectedEdition==='bundle'?'Набор':String(selectedEdition).toUpperCase()}`:'')+`\nТовар ${o.id}`;
      heading.textContent=variantLabel?(normalize(variantLabel).startsWith(normalize(gameTitle))?variantLabel:`${gameTitle} · ${variantLabel}`):o.title;
      const regionOption=fresh.options.find(option=>/region|регион|стран/i.test(option.label));const regionLabel=regionOption?.variants.filter(v=>selection[regionOption.id]?.includes(v.id)).map(v=>v.label).join(', ');
      variantMeta.textContent=`${o.kind} · ${selectedEdition==='dlc'?'DLC — требуется базовая игра':selectedEdition==='bundle'?'Набор':String(selectedEdition).toUpperCase()}\n${regionLabel?`${regionOption!.label}: ${regionLabel}\nРегион активации и условия доставки — в описании продавца.`:o.region}`;
@@ -150,8 +149,8 @@ export async function openProductPage(expected:Offer,appid:string,gameTitle:stri
     const confirmed=quote as {amount:number;fetchedAt:number};const linkData=selectionProductUrl(o.url,product.options,selected);
     handoff.append(el('p','gp-notice',before!==confirmed.amount?`Цена изменилась: ${before?.toLocaleString('ru-RU')} ₽ → ${confirmed.amount.toLocaleString('ru-RU')} ₽. Подтвердите новую цену переходом ниже.`:`Цена повторно подтверждена: ${confirmed.amount.toLocaleString('ru-RU')} ₽.`));
     handoff.append(el('p','gp-meta',`Товар ${o.id} · ${o.seller}\n${selectionSummary(product.options,selected)}`));
-    handoff.append(el('p','gp-checkout-notice',linkData.complete?'Ссылка содержит предвыбор по формату клиента GGSEL. Его применение в checkout не подтверждено. Сверьте варианты и итоговую цену на GGSEL.':'Варианты передаются, где поддерживается предвыбор GGSEL. Текстовые поля и несколько флажков не передаются: заполните их на GGSEL повторно.'));
-    const link=el('a','gp-payment-link','Подтвердить и открыть оформление на GGSEL') as HTMLAnchorElement;link.href=linkData.url;link.target='_blank';link.rel='noopener noreferrer';link.onclick=(event)=>{if(!active||generation!==quoteGeneration||!quote||Date.now()/1000-quote.fetchedAt>15){event.preventDefault();handoff.replaceChildren(el('p','','Подтверждение устарело. Нажмите «Продолжить к оплате» ещё раз.'));return;}link.remove();handoff.append(el('p','gp-checkout-status','Передан переход к оформлению на GGSEL. Заказ плагином не создан. Статус заказа и оплаты неизвестен; проверяйте его на GGSEL.'));};handoff.append(link);
+    handoff.append(el('p','gp-checkout-notice',linkData.complete?'Откроется официальная карточка GGSEL с предвыбором доступных параметров. Сверьте варианты и итоговую цену перед покупкой. Переход к способам оплаты выполняет сама площадка после создания заказа.':'Откроется официальная карточка GGSEL с предвыбором доступных параметров. Текстовые поля и флажки не передаются: заполните их на GGSEL повторно. Переход к оплате выполняет площадка после создания заказа.'));
+    const link=el('a','gp-payment-link','Подтвердить и открыть оформление на GGSEL') as HTMLAnchorElement;link.href=linkData.url;link.target='_blank';link.rel='noopener noreferrer';link.onclick=(event)=>{if(!active||generation!==quoteGeneration||!quote||Date.now()/1000-quote.fetchedAt>15){event.preventDefault();handoff.replaceChildren(el('p','','Подтверждение устарело. Нажмите «Проверить и продолжить оформление» ещё раз.'));return;}link.remove();handoff.append(el('p','gp-checkout-status','Передан переход к оформлению на GGSEL. Заказ плагином не создан. Статус заказа и оплаты неизвестен; проверяйте его на GGSEL.'));};handoff.append(link);
    };
    right.append(buy,seller);grid.append(left,right);body.replaceChildren(grid,el('p','gp-origin',`Источник: GGSEL · товар ${o.id}. Итоговая цена и доступность определяются площадкой. Условия возврата не предоставлены отдельным полем; читайте условия продавца и правила GGSEL перед оплатой.`));
    const reviews=el('section','gp-panel');reviews.append(el('h2','','Отзывы покупателей GGSEL'),el('p','','Загрузка отзывов…'));left.append(reviews);

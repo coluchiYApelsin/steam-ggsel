@@ -1,32 +1,17 @@
-# Confirmed limitations
+# Подтверждённые ограничения 0.8.2
 
-Current version 0.8.1: see docs/VALIDATION-0.8.1.md and docs/CHECKOUT-RESEARCH.md. Real options and live server pricing work in the native Steam page. The older 0.7.0 notes below are historical and are superseded where the current validation explicitly confirms behavior.
+Текущая проверка: [docs/END-TO-END-VALIDATION.md](docs/END-TO-END-VALIDATION.md). Исторические результаты сохранены в версионных отчётах.
 
-- Original-product option preselection was visually confirmed on the real merchant page for product 5283641 (Ultimate + region). Preservation in a final order remains unconfirmed. Always check parameters and currency on GGSEL. Free text, multiple checkboxes and clearing defaults require re-entry/checking.
-- No order is created by the plugin. Payment, authorization, 3DS and checkout are untested.
-- Official documentation examined describes seller APIs, not a supported third-party buyer order/payment contract. Internal buy/order mutations are deliberately not called. Trusted status reporting and automatic closing after payment require GGSEL support.
-- A target=_blank HTTPS link opened a separate Steam Browser window in the tested installation. Window shape/ownership is not guaranteed across clients. Closing it is not evidence of payment; the plugin reports an unknown status.
-- The current schema must match the displayed options before another quote; changed options require reopening the card. This conservative check may also reject harmless availability/label changes.
-- S.T.A.L.K.E.R. 2 category search currently returns unrelated/empty results; these are rejected. General localized-title equivalence remains unsupported.
-- Variant stock may be unknown; quotes do not reserve goods. Quantity calculators and ambiguous mixed selectors remain unsupported.
-- Selection memory lasts only within the current Steam document. Common seller descriptions do not invent per-variant conditions.
+- Прямой экран оплаты требует настоящего заказа. Поддерживаемого стороннего buyer API не найдено; внутренние buy/orders endpoints не вызываются. Проверен переход к карточке товара, не полный checkout. Требуется контракт GGSEL.
+- Передача полей неполная. Предвыбор radio/select подтверждён для R.E.P.O. (Казахстан), ранее Cyberpunk (издание/регион). Все checkbox, текст и очистка default требуют повторного ввода на GGSEL. Checkbox Hollow Knight реально не применился; передача в конечный заказ не проверена.
+- Статус оплаты неизвестен. Нет доверенного callback/разрешённого опроса статуса. Закрытие окна не доказывает оплату. Автозакрытие после оплаты не реализовано.
+- Четыре заданные игры проверены, русские названия UNCHARTED/Ragnarök привязаны к точным AppID. Универсальной эквивалентности переводов нет. Каталог S.T.A.L.K.E.R. 2 не подтверждён: ранее поиск дал чужие/пустые категории, жанровая страница 401; защиты не обходились.
+- Отзывы Hollow Knight: у товара 102134487 количество 0, блок загрузки сообщает «Отзывы временно недоступны». Причина не подтверждена; отдельный диагностический GET инструментом отклонён («blocked by policy»). Ошибка отзывов пока не раскрывает код, в отличие от catalog/quote/product. У остальных трёх выбранных товаров реальные отзывы отображены.
+- Поддерживается одна единица; калькуляторы количества и неоднозначные комбинированные селекторы исключаются. Quote не резервирует товар; остаток может отсутствовать. Валюта, комиссии и методы оплаты определяются GGSEL. Quote в проверке RUB, сайт USD.
+- DLC, непроверенные наборы, неизвестные издания и платформы исключаются. Deluxe bundle Ragnarök и Soundtracks bundle Hollow Knight не получают Standard предложения. Nullable Standard edition принимается только с независимыми проверками игры/Steam/типа.
+- Каталог содержит первую серверную страницу. Flight/API не являются гарантированным контрактом GGSEL. При ошибках доступа/структуры предложения скрываются. Обход CAPTCHA/блокировок не применяется. UTF-8 framing исправлен, но будущие форматы не гарантированы. Кэш до десяти минут; checkout повторно проверяет свежие данные.
+- Отдельное окно Steam Browser подтверждено в этой установке; другой клиент может открыть внешний браузер. Полный redirect trace независимо не считан. Выбор и исходные DOM/scroll сохраняются в текущем document, не после перезапуска клиента.
+- Пустые ответы, HTTP сбои, stale price/response, смена схемы и неподходящие товары покрыты автоматическими тестами. Полный GUI fault matrix для каждой игры не воспроизведён. Оплата/3DS/авторизация не тестировались.
+- GitHub push пока не подтверждён: официальный gh login ожидает авторизацию, запуск Chrome отклонён автоматической проверкой. Собственная лицензия отсутствует в истории; новая произвольно не назначалась. См. [THIRD_PARTY.md](THIRD_PARTY.md).
 
-Version 0.7.0 uses a native full product page in the existing Steam document. The previous original-site navigation in 0.6.0 did not meet the in-page requirement and has been removed. See docs/VALIDATION-0.7.0.md.
-
-- Alternate catalog cards require product verification, limited to eight candidates; unverified offers remain hidden. Premium is now supported with exact category/edition matching.
-- Seller ratings can also come from verified product seller statistics. Localized seller names may differ while the seller ID remains the same.
-- No CSS or JavaScript is now injected into GGSEL. Only the explicit checkout action leaves the native Steam product page. Direct checkout API is unavailable; it opens the exact real product URL, where the user selects options and places an order. Checkout, 3DS and payment-provider flows remain untested.
-- The authorized local Clash rule directs all steamwebhelper.exe traffic directly. It does not spoof country; cookies, merchant currency and provider policy can still affect available payment methods.
-
-- Visual end-to-end verification passed on the Russian Cyberpunk 2077 Steam page: four Standard offers and one Ultimate offer appear in the correct purchase blocks. Other games, languages and window sizes have not all been visually tested.
-- Catalog discovery tries a public ASCII slug derived from the Steam page title, with a reviewed Cyberpunk 2077 AppID override. This is a candidate, not proof: exact catalog title must match. Redirects, nonmatching names, translated titles and missing catalogs fail closed. Coverage is incomplete.
-- Edition matching supports exact Standard/Deluxe/Ultimate/Complete/Premium headings and the specifically reviewed Cyberpunk 2077 Ultimate bundle 32470 (including its Russian title). Other bundles, DLC, upgrades, unfamiliar editions and multi-edition seller selectors remain excluded. There is no universal mapping from GGSEL goods to Steam packages/AppIDs.
-- GGSEL's public catalog includes only the first server-rendered page. No prohibited search route, access restriction or CAPTCHA is bypassed. Hydration schema is undocumented and may change; malformed/challenge responses hide prices with an error.
-- Prices are advertised RUB listing values (`price_wmr`), refreshed after a ten-minute cache. Listings with selectable variants show “от”; regional modifiers, fees and final checkout price are determined on GGSEL. Variant conditions are expandable, not silently treated as worldwide activation.
-- Seller ratings come from catalog seller objects or verified product seller statistics. Review counts available in the listing belong to the product, not the seller; seller review counts are not invented.
-- Steam Gift `Auto` titles are accepted only when corroborated by observed catalog type 48. This is an observed website convention, not a guaranteed API contract. Unknown activation types are excluded.
-- Native page data uses a ten-minute cache. Seller and product review counts are shown separately; individual review text is not retrieved. Missing images/statistics are labelled rather than fabricated. Merchant descriptions are rendered as text, so original decorative markup and inline links are not reproduced.
-- The `.star` is unsigned. It was explicitly enabled locally for testing; this does not imply publisher verification or Marketplace distribution approval.
-- Windows builds require Microsoft's x64 Visual C++ Runtime. npm Starlight 1.1.6 currently reports native version 1.1.5. This is recorded rather than silently assuming the versions agree.
-
-See README and docs/RESEARCH.md for verification commands and provider evidence.
+Windows x64: Node 24.21.0, Bun 1.4.2, TypeScript 5.9.3, Starlight npm 1.1.6 (бинарник сообщает 1.1.5), Millennium 3.5.0. Требуется официальный Microsoft Visual C++ Runtime x64; прежняя ошибка 53 соответствовала отсутствующему DLL и Windows 0xC0000135. Плагин unsigned; включение локально не означает одобрение издателя/Marketplace.

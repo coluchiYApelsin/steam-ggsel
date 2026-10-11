@@ -1,2 +1,0 @@
-$ starlight pack
-error: script "build" exited with code 53

@@ -1,0 +1,99 @@
+{
+  "fixture": "Public read-only GGSEL snapshot, 2026-10-11; tests only, never runtime prices",
+  "title": "Hollow Knight",
+  "appid": "367520",
+  "catalog": "hollow-knight-12543",
+  "offer": {
+    "id": "102134487",
+    "title": "Hollow Knight STEAM KEY Global + RU",
+    "edition": "standard",
+    "kind": "Steam-ключ",
+    "price": 842,
+    "priceFrom": false,
+    "seller": "Play_Has_Limits",
+    "sellerId": "1091922",
+    "sellerRating": 4.9,
+    "productReviews": 0,
+    "region": "Регион по названию: Global + RU",
+    "conditions": [
+      "Соглашение · Я ознакомился с описанием товара и регионом активации ключа"
+    ],
+    "url": "https://ggsel.net/en/catalog/product/hollow-knight-kliuc-steam-ves-mir-rf-102134487"
+  },
+  "detail": {
+    "id_goods": 102134487,
+    "name": "Hollow Knight STEAM KEY Global + RU",
+    "baseCategory_name": "Hollow Knight",
+    "category": {
+      "url": "steam-31928",
+      "content_type_id": 2,
+      "content_type_name": "keys",
+      "type": "All Games",
+      "title": "Buy the Hollow Knight Key for Steam",
+      "breadcrumbs_title": "Steam",
+      "max_cnt_sell": null,
+      "discount": 349,
+      "forbidden_type": 0,
+      "edition": null,
+      "platform": "Steam",
+      "parent": {
+        "url": "hollow-knight-keys",
+        "title": "The Hollow Knight Key",
+        "breadcrumbs_title": "Keys",
+        "parent": {
+          "url": "hollow-knight-12543",
+          "title": "Buy Hollow Knight",
+          "breadcrumbs_title": "Hollow Knight",
+          "parent": {
+            "url": "igry-po-nazvaniyu",
+            "title": "Buy games cheap and with guarantee",
+            "breadcrumbs_title": "Games",
+            "parent": null
+          }
+        }
+      },
+      "is_russian_ip": false
+    },
+    "seller": {
+      "id_seller": 1091922,
+      "name_seller": "Play_Has_Limits",
+      "statistics": {
+        "rating": 4.9,
+        "count_sell": 80252,
+        "count_goods": 4380,
+        "count_bad_responses": 12,
+        "count_good_responses": 11486
+      }
+    },
+    "options": [
+      {
+        "id": 986010,
+        "name": "option_checkbox_986010",
+        "label": "Agreement",
+        "type": "checkbox",
+        "required": 1,
+        "modifier_visible": 1,
+        "variants": [
+          {
+            "value": 3600211,
+            "text": "I have read the product description and the region where the key is activated",
+            "default": false,
+            "modify": "+0.0 RUB",
+            "modify_value": "0.0",
+            "modify_value_default": "0",
+            "modify_type": "USD",
+            "num_in_stock": null,
+            "disabled": null
+          }
+        ]
+      }
+    ],
+    "prices_unit": null,
+    "price_wmr": 842,
+    "is_active": true,
+    "cnt_goodresponses": 0,
+    "images": "https://img.ggsel.net/102134487/original/250x250/aec2df089b3faff433a9680e3caa8a26.webp",
+    "info": "<p>⏰⚡️INSTANT AUTOMATIC KEY/CODE ISSUANCE 24/7 ⚡️⏰</p>\n\n<p>🛒🔥 💳For payment WITHOUT COMMISSION, use the top payment method or any cryptocurrency</p>\n\n<p>🌎 Activation region: Global / All regions</p>\n\n<p>✈️You can check the region of your Steam account here - <span>https://store.steampowered.com/account</span> (In this section you will find the “Country” item)</p>\n\n<p>💸After receiving the key, a refund is possible only if it is our fault</p>\n\n<p>✍️If you have any questions, please contact the seller in the correspondence, which is located at the bottom of your order page.</p>\n\n<p>⏰Support hours are daily from 10:00 to 00:00 Moscow time (UTC+3)</p>",
+    "add_info": ""
+  }
+}

@@ -5,4 +5,8 @@ diagnostics/
 *.log
 .millennium/
 .luarc.json
+.env
+.env.*
+*.pem
+*.key
 .millennium/lsp/

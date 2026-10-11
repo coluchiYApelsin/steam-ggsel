@@ -1,0 +1,75 @@
+{
+  "fixture": "Public read-only GGSEL snapshot, 2026-10-11; tests only, never runtime prices",
+  "title": "UNCHARTED: Legacy of Thieves Collection",
+  "appid": "1659420",
+  "catalog": "uncharted-legacy-of-thieves-collection",
+  "offer": {
+    "id": "5116781",
+    "title": "UNCHARTED: Legacy of Thieves Collection (STEAM/GLOBAL) KEY",
+    "edition": "standard",
+    "kind": "Steam-ключ",
+    "price": 1445,
+    "priceFrom": false,
+    "seller": "Code2Play",
+    "sellerId": "461064",
+    "sellerRating": 4.9,
+    "productReviews": 20,
+    "region": "Регион по названию: GLOBAL",
+    "conditions": [],
+    "url": "https://ggsel.net/en/catalog/product/uncharted-legacy-of-thieves-collection-steam-global-kliuc-5116781"
+  },
+  "detail": {
+    "id_goods": 5116781,
+    "name": "UNCHARTED: Legacy of Thieves Collection (STEAM/GLOBAL) KEY",
+    "baseCategory_name": "Uncharted: Legacy of Thieves Collection",
+    "category": {
+      "url": "steam-40302",
+      "content_type_id": 2,
+      "content_type_name": "keys",
+      "type": "All Games",
+      "title": "Uncharted Legacy of Thieves Collection for Steam",
+      "breadcrumbs_title": "Steam",
+      "max_cnt_sell": null,
+      "discount": 2734,
+      "forbidden_type": 0,
+      "edition": null,
+      "platform": "Steam",
+      "parent": {
+        "url": "uncharted-legacy-of-thieves-collection-keys",
+        "title": "Uncharted Legacy of Thieves Collection",
+        "breadcrumbs_title": "Keys",
+        "parent": {
+          "url": "uncharted-legacy-of-thieves-collection",
+          "title": "Uncharted Legacy of Thieves(Heritage of thieves)",
+          "breadcrumbs_title": "Uncharted Legacy of Thieves Collection",
+          "parent": {
+            "url": "igry-po-nazvaniyu",
+            "title": "Buy games cheap and with guarantee",
+            "breadcrumbs_title": "Games",
+            "parent": null
+          }
+        }
+      },
+      "is_russian_ip": false
+    },
+    "seller": {
+      "id_seller": 461064,
+      "name_seller": "Fabulou5",
+      "statistics": {
+        "rating": 4.9,
+        "count_sell": 187921,
+        "count_goods": 140,
+        "count_bad_responses": 46,
+        "count_good_responses": 16894
+      }
+    },
+    "options": [],
+    "prices_unit": null,
+    "price_wmr": 1445,
+    "is_active": true,
+    "cnt_goodresponses": 20,
+    "images": "https://img.ggsel.net/5116781/original/250x250/8223354_imgwebp.webp",
+    "info": "<p>🔵The license key for UNCHARTED: Legacy of Thieves Collection will be sent to your e-mail and will be available in your personal account at <span>http://www.oplata.info</span> immediately after payment.</p>\n\n<p>▶ Title: UNCHARTED: Legacy of Thieves Collection\n<br />⌚ Release date: 10/19/2022\n<br />🔰 Activation: STEAM\n<br />🔑 Product type: Activation key\n<br />🌎 Region of use: RU/GLOBAL\n<br />✅ Supported languages: Russian, English, etc.\n<br />We kindly ask you to take a minute and leave a positive review after your purchase.\n<br />Thank you</p>\n\n<p>🔑ACTIVATION:\n<br />1️⃣ Download and install Steam. (if not installed)\n<br />2️⃣ Log in with your details.\n<br />3️⃣ Go to the \"My games\" section, select \"Activate via Steam\" and enter the key.\n<br />4️⃣ After activation, the game will appear in the game library.</p>",
+    "add_info": ""
+  }
+}
