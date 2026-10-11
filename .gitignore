@@ -9,4 +9,10 @@ diagnostics/
 .env.*
 *.pem
 *.key
+*.pfx
+*.p12
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
 .millennium/lsp/

@@ -1,5 +1,11 @@
 # Changelog
 
+## Publication preparation — 2026-10-11
+
+- Rebuild 0.8.2 and confirm the previously validated artifact SHA-256; no runtime code changes.
+- Add update/removal instructions and additional local-file exclusions.
+- Audit all 12 existing commits / 155 blobs and document the GitHub authentication blocker in docs/PUBLICATION.md.
+
 ## 0.8.2 — 2026-10-11
 
 - Parse length-framed UTF-8 Flight text without losing subsequent catalog records or interpreting text as JSON.
